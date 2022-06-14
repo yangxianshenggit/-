@@ -1,0 +1,21 @@
+1、json
+	什么是json?
+		java对象标识,纯字符串。主要用于客户端和服务器之间数据交互，服务器与服务器之间交互
+	json语法：
+		[]数组、{}对象、""属性名或字符串类型值、:属性和值的分隔符、,属性之间或多种元素的分隔符
+		{
+			"id":1,
+			"name":"张三",
+			"status":[{
+				"age":25,
+				"addr":"中国"
+			}]
+		}
+	常用的解析方式：FastJSON\JackSon
+	fastjson:	
+		1、导入jar	
+		2、 String s = JSON.toJSONString(Object);
+            List<T> arrayLists = JSON.parseArray(s, T.class);
+			Object obj = JSON.parseObject(String json, Object.class);
+	注意：fastjson遵循驼峰命名
+2、xml

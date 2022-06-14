@@ -1,0 +1,98 @@
+反射
+java.lang.Class;
+java.lang.reflect.Constructor;
+java.lang.reflect.Field;
+java.lang.reflect.Method;
+java.lang.reflect.Modifer;//修饰符
+
+反射的作用：
+	1、反编译：class-->java
+	2、通过反射机制访问java类型的属性，方法，修饰符，构造
+	3、可以在运行期装配，无需在组件中进行源代码链接，代码耦合度降低
+	缺点：使用反射机制可以打破封装，java属性可以被外部访问
+		  性能问题：解释执行
+Class:
+	获取Class类型对象三种方式：
+		static Class forName(String ClassName);
+			获取Class类型对象，保存内存地址，指向堆中的对象，该对象代表的是整个类文件
+			必须写类全名（包名+类名，不加扩展名）
+			Class.forName("com.bjpowernode.reflect.ReflectTest01")
+			这是将ReflectTest01.class文件装载到JVM的过程。会执行静态代码块
+		类名.class;
+			每个类型都有class属性
+			Class c=int.class;
+			不会执行静态代码块
+		Object类的 getClass()
+			任何一个java对象都有这个方法
+			
+		注意：获取同一个类型的Class对象，以上三种方式获取的Class引用指向堆中同一个对象
+		在JVM中只有一个类的对象
+	
+	Class方法：
+		public T newInstance();
+			创建Class类型的对象;调用Class类型的无参构造 
+		Field[] getFields();
+			获取当前类型的所有的公开的属性
+		Field[] getDeclaredFields();
+			获取当前类型的所有的属性
+		Field getDeclaredField(String filedName);
+			获取当前类型的属性
+		String getName();
+			获取类型的名字,完整类名
+		String getSimpleName();
+			获取类型的名字，类名
+		int getModifiers();
+			获取修饰符;
+		Method[] getDeclaredMethods();
+			获取所有的方法
+		Method getDeclaredMethod(String methodName,Class<?>...parameterType);
+			获取指定的方法，参数：方法名，形参类型
+		Constructor[] getDeclaredConstructors();
+			获取所有的构造方法
+		Constructor getDeclaredConstructor(Class<?>...parameterType);
+			获取特定的构造方法	
+		Class<? super T> getSuperClass();
+			获取父类
+		Class<?>[] getInterfaces();
+			获取父类接口
+			
+		
+	Field方法：
+		Class<?> getType();
+			获取属性的类型
+		String getName();
+			获取类型的名字,完整类名
+		String getSimpleName();
+			获取类型的名字，类名
+		int getModifiers();
+			获取修饰符：
+		void set(Object o,Object value);
+			给o对象的这个属性赋value值
+		void setAccessible(boolean flag);
+			属性打破封装
+		Object get(Object o);
+			获取o对象的该属性
+			
+			
+	Modifer方法
+		static String toString(int Modifer);
+			根据修饰符数获取String
+			
+			
+	Method方法：
+		int getModifiers();
+			返回方法的修饰符
+		Class<?> getReturnType();
+			获取返回值类型
+		String getName();
+			获取方法名
+		Class[] getParameterTypes();
+			获取方法的形式参数列表
+		Object invoke(Object o,Object...parameter);
+			调用o对象的该方法
+	
+	Constructor方法
+		Object newInstance(Object... initargs);
+			创建对象,调用有参的构造方法
+			
+	

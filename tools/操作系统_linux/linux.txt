@@ -1,0 +1,120 @@
+LINUX
+ip:网络中的地址
+端口:	物理端口：网孔		逻辑端口:0~65535
+一个进程(服务)会占用一个或多个端口，但是一个端口只能被一个进程或服务占用
+tomcat占用8080，redis占用6379，mysql占3306，oracle占1521，nginx占10080
+	
+	
+1、配置环境变量：
+	/etc/profile文件
+		例如配置jdk的：
+		JAVA_HOME=/home/tomcat/jdk1.8
+		CLASSPATH=$JAVA_HOME/lib/
+		PATH=$PATH:$JAVA_HOME/bin
+		export PATH JAVA_HOME CLASSPATH
+	重新加载/etc/profile文件
+		source /etc/profile
+2、缺少命令时进行下载配置
+	例如找不到vim命令
+	yum -y install vim*
+	
+3、开启/关闭防火墙
+	
+	查看防火墙状态
+		firewall-cmd --state
+		running 开启
+		not running 关闭
+	停止firewal，临时生效，重启失效
+		systemctl stop firewalld.service
+	永久停止
+		systemctl disable firewalld.service
+	开启防火墙 
+		systemctl start firewalld.service
+	使生效或重启防火墙
+	reload使生效 firewall-cmd --reload
+	重启防火墙 systemctl restart firewalld.service
+4、防火墙增加ip端口白名单
+	firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="192.168.31.1" port protocol="tcp" port="2801" accept"
+	
+	开机启动防火墙
+	systemctl enable firewalld.service
+	
+	添加规则（开启指定端口,允许其他IP访问指定端口）
+	firewall-cmd --permanent --add-port=9990/tcp
+	firewall-cmd --permanent --add-port=9991/tcp
+	
+	查看当前防火墙规则列表
+	firewall-cmd --list-all
+	
+5、更改文件所属主
+	chown -R 主 文件
+	更改文件所属组
+	chown -R 主:组 文件
+	
+6、创建主(默认目录在home下)：
+	adduser 主名
+	passwd 主名
+	
+	创建组（任意目录）：
+		groupadd 组名
+	创建一个用户并加入用户组
+		useradd -g  组名 用户名
+		
+7、剪切、重命名、剪切并重命名
+	mv 当前名字 修改后名字
+	
+8、赋权限
+	chmod  755 文件
+	drwxr-xr-x
+	d:文件夹  -：文件
+	rwx:所属用户读写执行
+	r-x:同组用户读执行
+	r-x:不同组的用户读执行
+	421
+9、mkdir -p :创建文件夹
+	touch ：创建文件
+	
+10、nohup Command [Arg ...] [ &]
+	nohup 命令 > 日志文件 2>&1 &
+	
+11、df -h
+
+12、file -i 
+	查看文件编码方式
+13、查看文件过滤#开头的内容
+	grep -v ^#
+14、pwd：查看当前所在的绝对路径
+15、cp -rf 拷贝的文件 拷贝的地方并重命名
+16、rm -rf 遍历删除
+17、find:查找指定文件	find -name "ab*"
+18、tar:解压缩
+解压:tar -zxvf  文件 -C	解压到目标文件夹
+19、netstat查看端口号是否被占用	
+
+netstat -an | grep 3306
+20、vi/vim:文件编辑命令
+
+- vi 文件名
+- 输入a\i\o进入编辑状态
+- 输入内容
+- 按下Esc，退出编辑状态，输入:号
+  - q!:退出不保存
+  - wq!:退出并保存
+21、cat\more\less\tail:查看文件内容  **tail**
+
+cat和less及more指令相似，cat是一次性读取所有内容，文件内容较多时速度较慢。less与more的区别在	于：less可以前后翻页查看，more只能向前翻页查看。
+
+tail则用于实时获取log信息，从后向前读取内容
+
+ ./startup.sh && tail -f ../logs/catalina.out:启动tomcat并查看日志信息
+
+tail -f filename 实时动态读取filename最后10行内容
+
+tail -20f filename 实时动态读取filename最后20行内容
+
+22、reboot/init 6:重启Linux 
+
+poweroff/init 0:关闭Linux
+
+
+	

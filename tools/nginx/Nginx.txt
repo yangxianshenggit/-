@@ -1,0 +1,174 @@
+Nginx:
+	基本概念
+	1、nginx是什么？能做什么？
+	2、反向代理、负载均衡、动静分离
+	
+	安装、常用命令、配置
+	1、Linux系统nginx安装
+	2、常用命令
+	3、配置
+	
+	实现
+	1、如何实现反向代理
+	2、如何实现负载均衡
+	3、如何实现动静分离
+	4、高可用集群
+
+基本概念:
+	1、什么是Nginx？能做什么？
+	Nginx (engine x) 是一个高性能的HTTP和反向代理web服务器，同时也提供了IMAP/POP3/SMTP服务。
+	Nginx (engine x) 是一款轻量级的Web 服务器/反向代理服务器及电子邮件（IMAP/POP3）代理服务器，在BSD-like 协议下发行。其特点是占有内存少，并发能力强，事实上nginx的并发能力在同类型的网页服务器中表现较好。
+	Nginx专为性能优化而开发，实现上非常注重效率，能经受高负载的考验，有报告表明能支持高达50000个并发连接数
+	
+	支持热部署（不停服务的情况下进行软件升级）
+	2、正向代理、反向代理
+	正向代理：如果把局域网外的Internet想象成一个巨大的资源库，则局域网中的客户端要访问Internet，则需要通过代理服务器来访问。
+	客户通过客户端（浏览器/应用）配置代理服务器，通过代理服务器进行互联网访问
+	
+	反向代理：其实客户端对代理是无感知的，因为客户端不需要任何配置就可以访问，只需要将请求发送到反向代理服务器，
+	由反向代理服务器去选择目标服务器获取数据后，在返回给客户端，此时反向代理服务器和目标服务器对外就是一个服务器，暴露的
+	是代理服务器的地址，隐藏了真实服务器的IP地址
+	
+	3、负载均衡
+	单个服务器解决不了，增加服务器的数量，然后将请求分发到各个服务器上，将原先请求集中到单个服务器的情况改为将请求分发到
+	多个服务器上，将负载分发到不同的服务器
+	
+	4、动静分离
+	为了加快网站的解析速度，可以把动态页面和静态页面由不同的服务器来解析，加快解析速度，降低原来单个服务器的压力
+	
+Linux安装Nginx
+	1、官网下载：https://nginx.org 下载安装包
+	2、安装前需要安装相关的依赖
+		参考截图素材
+		（1）用root安装pcre
+		 wget http://downloads.sourceforge.net/project/pcre/pcre/8.37/pcre-8.37.tar.gz
+		 解压后进入目录，执行 ./configure
+		 然后执行 make && make install
+		 编译并且安装，若make失败要用make distclean 清理make产生的文件
+		 查看版本 pcre-config --version
+		（2）安装其他依赖
+		yum -y install make zlib zlib-devel gcc-c++ libtool openssl openssl-devel
+		（3）安装nginx
+		解压--》./configure (检查)--》make && make install(编译并安装)
+		安装完成后，在usr/local/下有nginx，在sbin下有启动脚本
+		
+启动nginx
+	/usr/local/nginx/sbin/nginx
+查看nginx配置
+	/usr/local/nginx/conf/nginx.conf
+	nginx默认80端口
+浏览器访问nginx
+	直接输入nginx所在服务器ip
+	永久关闭防火墙 systemctl disable firewalld
+	查看防火墙开放的端口
+	firewall-cmd --list-all
+	设置开放端口
+	firewall-cmd --add-service=http --permanent
+	sudo firewall-cmd --add-port=80/tcp --permanent
+	重新加载防火墙
+	firewall-cmd --relocd
+	
+常用的命令：
+	前提条件：必须进入/usr/local/nginx/sbin/
+	查看nginx版本号：
+		./nginx -v
+	启动nginx
+		./nginx
+	停止nginx
+		./nginx -s -stop
+	重新加载nginx.conf
+		./nginx -s reload
+		
+nginx配置文件：
+	位置：/usr/local/nginx/conf/nginx.conf
+	(1)配置文件三部分组成：
+		全局块：
+			从配置文件开始到events块之间的内容，主要设置一些影响nginx服务器整体运行的配置指令。
+			主要包括配置运行Nginx服务器的用户（组），允许生成的worker process数，进程PID存放路径、日志存放路径和
+			类型以及配置文件的引入等
+			
+			比如：worker processes 值越大，可以支持的并发处理量也越多
+			
+		events：
+			设计的指令主要影响Nginx服务器与用户的网络连接，常用的设置包括是否开启对多 work processes下的网路
+			连接进行序列化，是否允许同时接收多个网络连接，选取那种事件驱动模型来处理连接请求，每个word process
+			可以同时支持的最大连接数
+			
+			例如：worker_connections 1024	
+				配置服务器用户网络连接支持的最大连接数
+				
+		http块：
+			http全局块：
+				http全局块配置指令包括文件引入、MIME-TYPE 定义、日志自定义、连接超时时间、单链接请求数上限等
+			
+			server块：
+				和虚拟主机有密切关系，虚拟主机从用户角度看，和一台独立的硬件主机完全一样，节省了互联网服务器的硬件成本
+				每个http块可以包括多个server块，而每个server块就相当于一个虚拟主机，而每个server块也分为全局server块，
+				以及可以同时包含多个location块
+				
+				全局server块：
+					最常见配置是本虚拟主机的监听配置和本虚拟主机的名称或IP
+					
+				location块：
+					一个server块可以配置多个location块
+					这块主要作用是基于Nginx接收到的请求字符串（例如 server_name/uri-string），对虚拟主机名称(也可以IP别名)
+					之外的字符串(例如 前面的/uri-string)进行匹配，对特定的请求进行处理。地址定向、数据缓存和应答控制等功能，
+					还有许多第三方模块的配置也在这里进行
+					
+实现反向代理：
+	1、实现效果
+	例如：浏览器请求www.abc.com自动跳转tomcat8080的页面
+	2、实例实现步骤
+		（1）windows的hosts文件加上ip和域名的映射关系
+			文件结尾加上	IP 域名
+		（2）nginx转发配置（反向代理）
+				配置接收的请求
+			   server {
+					listen       80;
+					# server_name  localhost;
+					#接收到192.168.31.129:80的请求就转发至localtion配置的地址
+					server_name  192.168.31.129;
+					#charset koi8-r;
+
+				 location / {
+					root   html;
+					#转发地址
+					proxy_pass http://192.168.31.129:8080;
+					index  index.html index.htm;
+				}
+
+	3、使用反向代理实现访问路径跳转不同端口服务中
+		nginx监听端口9001
+		访问http:127.0.0.1:9001/edu/直接跳转127.0.0.1:8080
+		访问http:127.0.0.1:9000/vod/直接跳转127.0.0.1:8080
+		
+		  server {
+				listen       9000;
+			#   listen       somename:8080;
+				server_name  192.168.31.129;
+				#过滤的路径
+				location ~ /vod/ {
+				#       root   html;
+				#       index  index.html index.htm;
+				#转发的地址
+						 proxy_pass http://127.0.0.1:8080;
+			 }
+		 }
+	4、注意location配置过滤路径：
+		location [ = | ~ | ~* | ^~] uri {
+		
+		}
+		(1)=:用于不含正则表达式的uri前，要求请求字符串与uri严格匹配，如果匹配成功，
+		就停止向下搜索并立即处理该请求
+		(2)~:用于表示uri 包含正则，并且区分大小写
+		(3)~*:用于表示uri 包含正则，并且不区分大小写
+		(4)^~:用于不含正则的uri前，要求Nginx服务器找到表示uri和请求字符串匹配度最高的
+		location后，立即使用此location处理请求，而不再使用location中的正则uri和请求
+		字符串做匹配
+		
+		注意：如果uri包含正则，则必须要有~或者~*标识
+		以上是针对请求的uri做的校验
+
+	
+		
+	

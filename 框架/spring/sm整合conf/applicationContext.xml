@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/cache"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+
+    <!--引入spring-service配置-->
+    <import resource="spring-service.xml" />
+    <!--扫描包，管理bean-->
+    <context:component-scan base-package="com.kayak.sm"/>
+    <!--读取db.properties-->
+    <!--配置数据源-->
+    <!--spring管理sqlSessionFactory，给实体类起别名，配置分页插件-->
+    <!--扫描包，为mapper接口生成实现类-->
+    <!--aop:管理事务-->
+    <!--aop:事务的传播特性-->
+</beans>

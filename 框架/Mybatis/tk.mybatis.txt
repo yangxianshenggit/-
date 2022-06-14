@@ -1,0 +1,30 @@
+通用Mapper（tk.mapper）
+	1、只针对单表草表，多表使用传统方式
+	2、使用tk.Mapper可以在Mapper接口中不写方法和映射文件
+	3、Mapper接口继承Mapper<T>
+	注意：spring和mybatis整合配置文件中
+		 <!--
+		扫描mapper接口:目的就是为了给mapper接口生成子类
+		普通的Mybatis:org.mybatis.spring.mapper.MapperScannerConfigurer
+		通用Mapper:tk.mybatis.spring.mapper.MapperScannerConfigurer
+		-->
+		<bean class="tk.mybatis.spring.mapper.MapperScannerConfigurer">
+			<property name="basePackage" value="com.kayak.spring_mybatis.mapper"/>
+			<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+		</bean>
+	4、使用tkMapper时根据主键查询要在实体类主键属性上加注解
+		@Id//标记主键
+		mysql插入数据前获取自增主键：@Genera
+	5、当实体类名和数据库表名不一致可以纠正:@Table(name="数据库表名")
+	   当属性名和数据库字段名不一致时纠正：@Column(name="数据库字段名")		@Transient也可以
+	   数据库字段名单词间下划线分割，实体类遵循驼峰命名，框架会自动转
+	6、单表条件查询较复杂时，使用example (实例)  criteria(标准)
+		Example example = new Example(Dept.class);
+        example.setOrderByClause("deptno desc");
+        Example.Criteria criteria = example.createCriteria();
+        //loc相等,并且deptno大于多少的少的
+        criteria.andEqualTo("loc",dept.getLoc()).andGreaterThan("deptno",dept.getDeptno());
+        return deptMapper.selectByExample(example);
+	7、增删改
+		insertSelective：动态sql，只插入非空字段
+		insert:所有字段都插入

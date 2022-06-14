@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	 http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/tx
+	 http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--引入spring-dao配置-->
+    <import resource="spring-dao.xml"/>
+    <!--事务管理器:可以控制业务层方法出现异常时sql回滚
+   或者下面的aop和事务传播特性不配置，改为一行
+   <tx:annotation-driven transaction-manager="transactionManager"/>
+   但在类上或指定的方法上加注解@Transactional(propagation = Propagation.REQUIRED)
+   指定该类或该方法支持事务且指定事务的传播特性
+   -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!--aop:管理事务-->
+    <aop:config>
+        <aop:pointcut id="pointcut" expression="execution(* com.kayak.sm.service..*.*(..))"/>
+        <aop:advisor advice-ref="trAdvice" pointcut-ref="pointcut"/>
+    </aop:config>
+    <!--aop:事务的传播特性-->
+    <tx:advice id="trAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="insert*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="add*" propagation="REQUIRED"/>
+            <tx:method name="save*" propagation="REQUIRED"/>
+            <tx:method name="call*" propagation="REQUIRED"/>
+            <tx:method name="*" propagation="REQUIRED" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+</beans>

@@ -1,0 +1,4 @@
+System
+	static void setOut(PrintStream out) 
+		改变流的方向
+		System.setOut(new PrintStream(new FileOutputStream("log")));

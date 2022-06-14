@@ -1,0 +1,120 @@
+spring
+	IOC（Inversion Of Control）:控制反转，管理bean对象
+	AOP：面向切面编程
+	开源免费
+1、03年兴起的轻量级的开发框架,分层的开源框架
+	轻量级/重量级:
+		1、框架运行时所消耗的资源、cup、系统资源，运行某个功能耗时
+		2、启动的时候会加载所有组件
+	低侵入性：依赖少
+		
+	总结：轻量级、低侵入性、整合第三方框架、解决所有层的开发
+2、什么是IOC（Inversion Of Control）:控制反转，创建、管理bean对象的Map容器
+		平时创建对象的时候都是通过new对象的方式创建对象，现在将创建和管理对象的权力交给springIOC
+		IOC是一个很大的bean容器，当我们需要对象的时候从IOC容器中取出需要的对象即可
+3、为什么使用IOC
+	传统方式创建的弊端
+		1、需要对象的时候通过new关键字创建对象
+		   new:在堆内存中开辟空间，初始化属性
+		   如果创建对象过多会造成空间浪费，甚至内存溢出，GC机制不一定能及时回收(与对象生命周期有关)
+		2、没有合理的方案来管理对象
+		3、对象间的依赖关系管理麻烦(get\set)
+4、IOC原理：
+	工厂设计模式：简单工厂
+		简单工厂：根据不同情况创建对象
+	反射：利用Class文件(字节码文件)和Class类(操作字节码)来获取和操作类的属性和方法
+	泛型：限定传递的类型，在编译期生效
+		泛型类：类名<T>
+			T代表type
+			E代表Element元素
+			K,V
+		泛型方法：<T> T
+			1、先定义
+			2、泛型方法可以使用static，泛型类不行
+创建spring项目：
+	配置文件：ApplicationContext.txt
+	IOC：
+	1、导jar
+		spring-beans-5.2.3.RELEASE.jar:管理bean对象
+		spring-context-5.2.3.RELEASE.jar:找资源文件的
+		spring-core-5.2.3.RELEASE.jar:核心包
+		spring-expression-5.2.3.RELEASE.jar:表达式包
+		commons-logging.jar：依赖包
+	2、配置文件:
+		applicationContext.xml：配置bean
+		
+	3、jar+配置文件生成beanFactory来获取bean
+		//BeanFactory就是IOC
+		BeanFactory beanFactory=new ClassPathAppliactionContext("AppliactionContext.xml");
+		beanFactory.getBean(xxx);
+		 //关闭bean工厂:
+        ((ClassPathXmlApplicationContext)beanFactory).close();
+	4、IOC数据结构：map<String id,Object obj>,调用close方法是把对象的引用从map中移除，对象是否被销毁不一定
+	5、bean的注入：注入的方案：构造方法、set方法
+				   注入参数类型：对象、集合、普通属性
+	   bean对象的对象属性注入
+			依赖注入:DI Dependency Injection
+			面试题:IOC和DI的区别
+			IOC:就是管理bean对象的容器
+			DI:是在IOC基础之上才会有DI的概念,描述在容器中对象之间的关系
+	6、bean之间的依赖注入(autowire)：常用的这两种方式
+			byName:按名称注入，也就是id号
+			byType：按类型注入，默认按类型注入，
+					加载xml的时候某些bean的属性中有其他类型bean，如果没明显配置出来，则在xml中寻找该类型注入，没找到就赋值null
+			针对单个bean配置依赖关系通过bean标签的autowire属性
+			针对全局bean的依赖关系可以在xml的约束上配置	default-autowire="byName"
+	7、bean的作用域scope:
+		singletion:单例模式，每次生成对象都是同一个，有线程安全隐患
+		prototype:多例模式，每次生成不同对象
+			当scope为prototype时destroy-method不会执行,默认开启懒加载
+		request:每次请求都创建对象
+		session:每次会话创建对象
+		glibalSession:多系统之间每次会话创建对象
+	8、bean在IOC的生命周期
+		IOC容器初始化创建对象到IOC容器调用close方法，不是指对象在内存中的生命周期
+		可以配置bean的初始化方法和销毁的方法，在这期间可以做一些操作
+		当scope为prototype时destroy-method不会执行
+		init-method和destroy-method本身和bean生命周期没太大关联
+		init-method和构造方法那个先执行？
+		构造方法先执行，创建出对象再将对象的引用保存在IOC中，这时调用init方法
+	9、lazy-init懒加载，默认false未开启，开启时为true，在获取bean的时候创建对象
+		当scope为prototype时默认开启懒加载
+		对系统性能要求很高的情况下配置
+	10、注解+配置文件的方式管理bean
+		1、在xml中配置扫描包：只要是java类都可以被看作bean对象，bean对于spring就是一个组件，
+		   被扫描包下的类扫描后，不代表包下的类被spring管理，还需要被标记注解，才能被springIOC管理
+		   扫描包可以指定那些类被扫描
+				详情看ApplicationContext.txt
+		2、在bean类上加注解对应层次的注解
+			默认Bean的ID号就是类名首字母小写，也可以指定自己命名的名字@Component("userHaha")
+			bean的对象属性注入 注解@Autowried,按类型注入，找不到按名称注入	注解@Resource,按名称注入
+		3、注意注解方式对象属性注入，bean的对象属性为null说明没注入，对象属性的属性为null说明注入了只是没赋值
+	11、纯注解方式管理bean对象
+	配置类及测试方法查看springAnnotationConf.txt
+	常用注解：
+	注意：可以在配置类中通过@Bean注解设置方法配置bean,也可以在类上通过@Component、@设置bean
+		  	@Autowired默认按照类型加载，类型找不到会按名字找，当属性为接口，且接口有多个实现类有两种方式处理
+			1、实现类上指定id号(id号为接口名)
+			2、也可以用@Qualifier指定名字
+			3、在实现类上加注解@Primary，优先加载
+			@ComponentScan(value = {"com.kayak.springioc"})//批量扫描包
+			@Configuration//标记该类是配置类
+			
+			@Scope("singleton")//prototype或singleton
+			@Lazy//默认true开启懒加载
+			@Bean("user")//可以配置别名，默认id为方法名
+			@Value(value="")//给bean属性设置值，可以放在属性名和setter方法上
+			@PostConstruct//配置bean在IOC初始化方法，javax包下的注解
+			@PreDestroy//配置bean在IOC销毁方法，javax包下的注解
+			
+			@Controller标注Web层Bean
+			@Service标注Service层Bean
+			@Repository标注持久层Bean ，有持久层实现类在使用
+			@Component标注Bean
+			
+			@Autowired默认按照类型加载，类型找不到会按名字找，因此通常实现类被IOC容器管理会加别名(别名为接口名)
+			@Qualifier:默认按照类型加载，按名字查找required = true
+			@Resouce默认按名字加载，但是可以指定按类型加载，属于JSR-250标准
+			
+			@Primary指定Bean的加载顺序，优先加载
+			

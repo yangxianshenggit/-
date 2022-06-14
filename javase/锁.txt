@@ -1,0 +1,74 @@
+锁：
+t1和t2
+异步编程模型：t1和t2线程各自执行各自的
+同步编程模型：t1线程和t2线程执行，当t1线程必须等t2线程执行结束后才能执行
+
+什么时候同步？
+	1、为了数据的安全性，尽管应用程序使用率变低，但为了保证线程安全性，必须加入线程同步机制
+	2、什么时候使用线程同步
+		①多线程环境
+		②多个线程共享一个数据
+		③共享数据涉及到修改
+		
+	
+	原理：t1和t2
+		t1执行遇到sychronized关键字，就会去找对象锁，如果找到对象锁，就会进入同步代码块中执行
+		程序。当同步代码块语句执行结束后，t1归还对象锁。
+		在t1执行同步代码块过程中，如果t2也执行到此，去找对象锁，但该锁的持有者是t1线程，
+		只能在这等待t1的归还
+		
+		synchronized(共享对象){ 
+			需要线程安全的代码
+		} 
+		synchronized加在成员方法上，对象锁，同步的是整个方法体
+		synchronized加在静态方法上，类锁，同步的是整个类体
+		注意：
+			对象调用成员方法时，方法上有synchronized才去找对象锁 ，没有则不找，直接执行
+			调用静态方法时，若方法上有sychronized才去找类锁，没有则不找，直接执行
+			
+			
+		死锁：
+			两个共享对象o1、o2
+			两个线程t1、t2
+			
+			public class Test{
+				main(){
+					Object o1=new Object();
+					Object o2=new Object();
+					Thread t1=new Thread(new DescLock1(o1,o2));
+					Thread t2=new Thread(new DescLock2(o1,o2));
+					t1.start();
+					t2.start();
+				}
+			}
+			class DescLock1 implements Runnable{
+				Object o1;
+				Object o2;
+				DescLock(Object o1,Object o2){
+					this.o1=o1;
+					this.o2=o2;
+				}
+				public void run(){
+					synchronized(o1){
+					try{Thread.sleep(1000);}catch(Exception e){}
+						synchronized(o2){
+						}
+					}
+				}
+			}
+			class DescLock2 implements Runnable{
+				Object o1;
+				Object o2;
+				DescLock(Object o1,Object o2){
+					this.o1=o1;
+					this.o2=o2;
+				}
+				public void run(){
+					synchronized(o2){
+					try{Thread.sleep(1000);}catch(Exception e){}
+						synchronized(o1){
+						}
+					}
+				}
+			}
+			

@@ -1,0 +1,129 @@
+datax：离线数据同步框架,Framework（架构、结构） + plugin 架构构建。将数据源读取和写入抽象成为Reader/Writer插件，纳入整个同步框架。
+	Reader为数据采集模块，采集数据源数据发送给Framework
+	Writer为数据写入模块，负责不断的向Framework取数据，并写入目的端
+	Framework连接reader和writer，作为两者的数据传输通道，处理缓冲，流控，并发，数据转换等
+	job:Datax完成单个数据同步的作业
+单个job的执行流程
+	Datax接收到一个job之后将启动一个进程来完成整个作业同步过程。Datax Job模块是单个作业的中枢管理节点，承担了数据清理、
+	子任务切分（将单一作业计算转化为多个子Task）、TaskGroup管理等功能
+	
+	DataxJob启动后，会根据不同的源端切分策略，将Job切分成多个小的Task(子任务)，以便于并发执行。Task便是DataX作业的最小单元，
+	每个Task都会负责一部分数据的同步工作
+	
+	切分多个Task之后，Datax Job会调用Scheduler（调度者）模块，根据配置的并发数据量，将拆分的Task重新组合，组装成TaskGroup(任务组)。
+	每一个TaskGroup负责以一定的并发运行完毕分配好的所有Task，默认单个任务组的并发数量为5。
+	
+	每一个Task都由TaskGroup负责启动，Task启动后，会固定启动Reader-->Channel（通道）-->Writer的线程来完成任务同步工作
+	
+	Datax作业运行起来后，Job监控并等待多个TaskGroup模块任务完成，等待所有TaskGroup任务完成后Job成功推出。否则异常退出。
+	
+
+执行任务：
+	1、python命令直接执行
+		nohup python /home/tomcat/datax3.0/bin/datax.py /home/tomcat/datax3.0/job/dataxBackUpLoginLog.json  -p "-Dusername=hxcard -Dpassword=密码 -DdbPort=1521 -DdbIP=106.100.70.17 -DBeforeTime=20220301000000 -DbackTableName=hx_login_log_middle20220331" >/dev/null 2>&1
+	2、java执行
+		java.lang.Runtime类中的方法exec方法，可以执行jvm运行时环境中的命令
+		//datax3.0版本不支持\\需要替换为/
+		pythonPath=pythonPath.replace("\\", "/");
+		jsonPath=jsonPath.replace("\\", "/");
+		String [] cmdarray=new String[]{"python",pythonPath,jsonPath,"-p"+paramsStr};
+		Process process=Runtime.getRuntime().exec(cmdarray);//数组中包含运行的命令
+		BufferedReader in=new BufferedReader(new InputStreamReader(process.getInputStream()));
+		int i=-1;
+		try {
+			String line;
+			while ((line=in.readLine())!=null) {
+				System.out.println(line);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}finally {
+			
+			try {
+				in.close();
+				i=process.waitFor();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
+		}
+		//执行python后返回信息,0为成功,其他为失败
+		i==0?succ:filed;
+json文件:
+			Oracle-->txt、txt-->Oracle、Oracle-->Oracle、Mysql-->Oracle、Oracle-->Mysql、Mysql-->txt、txt-->Mysql
+			
+			注意：使用splitPk代表的字段进行数据分片，DataX会启动并发任务（job）进行数据同步，这样可以提升同步的效能。
+				但是使用并发任务（job）进行数据同步可能会造成读事务 数据不一致问题
+				Oracle在数据存储划分中属于RDBMS系统，对外可以提供强一致性数据查询接口。例如当一次同步任务启动运行过程中，当该库存在其他数据写入方写入数据时，
+				OracleReader完全不会获取到写入更新数据，这是由于数据库本身的快照特性决定的。关于数据库快照特性，请参看MVCC Wikipedia
+				上述是在OracleReader单线程模型下数据同步一致性的特性，由于OracleReader可以根据用户配置信息使用了并发数据抽取，因此不能严格保证数据一致性：
+				当OracleReader根据splitPk进行数据切分后，会先后启动多个并发任务完成数据同步。由于多个并发任务相互之间不属于同一个读事务，
+				同时多个并发任务存在时间间隔。因此这份数据并不是完整的、一致的数据快照信息。
+                //"splitPk": "db_id",
+			
+{
+    "job": {
+		//内容
+        "content": [
+            {
+                "reader": {
+					"name": "oraclereader",
+                    "parameter": {
+						//连接
+						"connection": [
+                        {
+						  //可以使用自定义sql或指定连接表
+						  //自定义sql
+                          "querySql": ["SELECT MOBILE,TIME,STATUS,LAST_CITY,CITY,LAST_TIME,PHONE_SERIES,LONGITUDE,LATITUDE,IP,JSESSIONID,TOKEN,LOGIN_TYPE FROM hx_login_log_bak20220331 WHERE time >= ${BeforeTime}"],
+						  //连接表
+						  "table":[
+								"tablename"
+						  ],
+						  //
+                          "jdbcUrl": ["jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = ${dbIP})(PORT = ${dbPort})))(LOAD_BALANCE = NO)(FAILOVER = ON)(CONNECT_DATA = (SERVICE_NAME = orcl)))"]
+                        }],
+						//指定读的字段，配合的是连接表
+					   "column": ["字段1","字段2"],
+					   //指定条件，配合的是连接表
+					   "where": "",
+                       "username": "${username}",
+                       "password": "${password}",
+					   //切分主键
+					   "splitPk": "db_id"
+                    }
+                },
+                "writer": {
+                    "name": "oraclewriter",
+                    "parameter": {	"column":["MOBILE","TIME","STATUS","LAST_CITY","CITY","LAST_TIME","PHONE_SERIES","LONGITUDE","LATITUDE","IP","JSESSIONID","TOKEN","LOGIN_TYPE"],
+						"connection": [
+                        {
+                          "jdbcUrl": "jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = ${dbIP})(PORT = ${dbPort})))(LOAD_BALANCE = NO)(FAILOVER = ON)(CONNECT_DATA = (SERVICE_NAME = orcl)))",
+						  "table":["${backTableName}"]
+						}],
+				        "username": "${username}",
+                        "password": "${password}"
+                    }
+                }
+            }
+        ],
+        "setting": {
+			//速度
+            "speed": {
+				//设置传输通道数量
+                "channel": 3,
+				//设置通道的传输速度byte/s 设置的传输速度会尽量逼近这个值但不会高于设置值
+				//设置通道速度上限为1mb/s
+				"byte": 1048576
+            },
+			//出错限制
+			"errorLimit"{
+				//记录
+				"record": 0,
+				//百分比 1表示100%
+				"percentage": 0.02
+			}
+        }
+    }
+}
+	

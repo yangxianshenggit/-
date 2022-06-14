@@ -1,0 +1,49 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                 "channel": 3,
+				 "byte": 1048576
+            },
+			"errorLimit": {
+				"record": 0,
+				"percentage": 0.02
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "${username}",
+                        "password": "${password}",
+                        "column": [
+                            "id",
+                            "name"
+                        ],
+						"splitPk": "id",
+                        "connection": [
+                            {
+                                "table": [
+                                    "user"
+                                ],
+                                "jdbcUrl": [
+									"jdbc:mysql://192.168.31.129:3306/javase"
+                                ]
+                            }
+                        ]
+                    }
+                },
+               "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/tomcat/datax/files",
+                        "fileName": "mysql_txt",
+                        "writeMode": "truncate",
+                        "fieldDelimiter": "|"
+                    }
+                }
+            }
+        ]
+    }
+}

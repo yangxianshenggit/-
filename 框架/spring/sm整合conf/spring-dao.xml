@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/cache"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop https://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+
+    <!--读取db.properties-->
+    <context:property-placeholder location="classpath:conf/db.properties" />
+    <!--配置数据源(数据库连接池):dbcp、c3p0、德鲁伊
+        BasicDataSource基本数据源
+    -->
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" >
+        <property name="driverClassName" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}" />
+    </bean>
+    <!--spring管理sqlSessionFactory，给实体类起别名，配置分页插件,批量扫描mapper.xml-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--sqlSessionFactory依赖数据源-->
+        <property name="dataSource" ref="dataSource"/>
+        <property name="typeAliasesPackage" value="com.kayak.sm.bean"/>
+        <property name="mapperLocations" value="classpath:mappers/*.xml"/>
+       <!-- <property name="plugins" >
+            <array>
+                <bean class="com.github.pagehelper.PageInterceptor">
+                    <property name="properties">
+                        <props>
+                            <prop key="dialect">com.github.pagehelper.dialect.helper.MySqlDialect</prop>
+                            <prop key="supportMethodsArguments">true</prop>
+                        </props>
+                    </property>
+                </bean>
+            </array>
+        </property>-->
+    </bean>
+    <!--扫描包，为mapper接口生成实现类-->
+    <!--
+       扫描mapper接口:目的就是为了给mapper接口生成子类
+       普通的Mybatis:org.mybatis.spring.mapper.MapperScannerConfigurer
+       通用Mapper:tk.mybatis.spring.mapper.MapperScannerConfigurer
+       -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.kayak.sm.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+</beans>

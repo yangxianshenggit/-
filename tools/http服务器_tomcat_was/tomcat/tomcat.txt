@@ -1,0 +1,314 @@
+tomcat
+1、什么是服务器？
+	服务器，是一种安装在服务端计算机的资源文件调度器。每一种服务器专门接受特定的请求协议。对特定的文件进行调用管理。
+	MySql服务器就是服务器的一种。专门对frm文件也就是表文件进行管理调用
+2、HTTP服务器
+	Http服务器是服务器中一种，其行为与Http协议相关，Http服务器可以接收来自于浏览器/客户端发送的Http请求协议包，并自动对Http请求协议包内容进行解析。
+	解析后，自动定位被访问的文件。并将定位的文件内容写入到Http响应协议包中，最后负责将Http响应协议包推送回发起请求的浏览器上。
+	常见的HTTP服务器：was/tomcat/JBOSS/Weblogic
+3、tomcat默认端口8080,修改端口在哪改？
+	tomcat安装目录下的server.xml，更改 
+	<Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" />
+
+4、tomcat常用命令：
+	windows启动：双击startup.exe
+	windows停止：双击shoutdown.exe
+	linux启动：./startup.sh
+	linux停止：./shoutdown.sh
+	
+5、浏览器访问tomcat首页：ip:iport
+
+6、Tomcat目录和文件介绍
+
+> 1.bin： Tomcat管理命令 binary
+>
+> 2.conf: Tomcat配置文件	config
+>
+> 3.lib:  Tomcat使用的jar
+>
+> 4.logs: 记录Tomcat运行日志信息
+>
+> 5.temp: Tomcat临时存放文件的地方
+>
+> 6.webapps:在默认情况下，Tomcat接收到请求之后，自动的到webapps文件下定位资源文件
+>
+> 7.work: Tomcat将JSP文件编辑为java文件存放于此
+
+7、idea集成本地的tomcat，查询idea笔记
+	导jar包,推荐还是在WEB-INF目录下创建lib的方式导jar,WEB-INF受保护的，不能通过浏览器直接访问，必须经过java代码跳转才行
+8、tomcat修改文件需重启服务器,因为需要重新发布。idea默认发布到out目录
+
+9、selvet是什么？
+	tomcat是sun和apache开发的http服务器，tomcat内置了selvcet API（规范），负责接收和处理客户端请求
+10、web.xml是什么？
+	服务器启动时会第一时间加载和读取web.xml，该文件中配置外界访问服务器的访问路径
+	<!--配置一个servlet，用于接收客户端请求-->
+	<servlet>
+		<!--servlet名称，通常是类名，也可以随便起名-->
+        <servlet-name>FirstServlet</servlet-name>
+		<!--类的路径-->
+        <servlet-class>com.bjpowernode.selvet01.FirstServlet</servlet-class>
+		<!--配置初始化参数,在servletConfig对象获取-->
+		<init-param>
+			<param-name>username</param-name>
+			<param-value>张三</param-value>
+		 </init-param>
+		<!--在服务器启动的时候就创建该servlet对象，饿汉式单例模式，这行配置必须在该servlet的最后一行-->
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+	
+    <servlet-mapping>
+        <servlet-name>FirstServlet</servlet-name>
+		<!--访问路径，必须以/开头,这个是提供给客户端进行访问，且不用加项目名，
+		这里匹配的是客户端请求路径的项目名后的相对路径，但如果要跳转三方的页面必须绝对路径-->
+        <url-pattern>/abc</url-pattern>
+        <url-pattern>/servlet/FirstServlet</url-pattern>
+    </servlet-mapping>
+	
+	<!--设置session生命周期-->
+    <session-config>
+        <!--单位分钟-->
+        <session-timeout>30</session-timeout>
+    </session-config>
+	 <!--servlet监听器:监听域对象，服务器启动时创建监听器-->
+    <listener>
+        <listener-class>com.bjpowernode.util.SessionListener</listener-class>
+    </listener>
+	<!---->
+	如果不配置配置文件可以通过注解的方式: @WebServlet("访问路径")\@WebListener
+11、servlet基本使用
+	1、Servlet生命周期
+		当客户端/浏览器第一次访问servlet时候，由servlet引擎创建servlet对象，并且只创建一次[servlet默认单例模式]
+		接着调用service方法执行get/post请求，当服务器重启或停止运行时会销毁servlet
+		注意：当服务器没有重启或停止运行，servlet只被创建一次
+	2、如何使用servlet？三种方式
+		1、实现servlet接口
+		在ServletAPI中最重要的是Servlet接口，所有Servlet都会直接或间接的与该接口发生联系，
+		该接口包括以下五个方法：
+			init(ServletConfig config)
+			ServletConfig getServletConfig()
+			service(ServletRequest req,ServletResponse res)
+			String getServletInfo()
+			destroy()
+		2、继承GenericServlet抽象类
+			它对Servlet接口中的部分方法（init和destroy）添加了实现，
+			使得开发时只需要考虑针对service方法的业务实现即可。
+		3、继承HttpServlet类
+			是继承GenericServlet的基础上进一步的扩展
+			平时使用Servlet开发基本上就是继承该类，重写doGet和doPost方法或者service方法
+			有7中请求方式，但平时只考虑get或post请求，request可以获取请求方式(参考httpservlet的service源码)
+			常见的get请求：
+				地址栏、form表单、location.href=""(BOM编程)、超链接
+			常见的post请求
+				form表单、
+	
+	3、ServletRequest、ServletResponse、HttpServletRequest、HttpServletResponse以及Servlet和HttpServlet之间的关系
+		HttpServletRequest、HttpServletResponse分别是ServletRequest、ServletResponse的子类
+		HttpServlet继承GenericServlet抽象类，GenericServlet抽象类实现了Servlet接口
+		
+12、乱码的本质
+	客户端和服务端编码解码方式不一致导致
+	通常客户端编码是utf8
+	tomcat服务端的servlet默认编码方式时iso-8859-1:西欧编码
+	解决方案:request.setCharacterEncoding("utf-8");
+	
+	乱码分类：
+		客户端-->服务器端
+			get乱码：tomcat7.0以上已解决
+			post乱码:需要程序人员解决	
+					request.setCharacterEncoding("utf-8");
+		服务器端-->客户端
+			//设置编码方式
+			response.setContentType("text/html;charset=utf-8");
+			//获取流回写
+            response.getWriter().write("登陆成功");
+			注意：先设置编码在设置流
+		服务器端-->数据库端
+			安装数据库时设置好编码
+		数据库端-->服务器端
+			安装数据库时设置好编码
+		服务器端-->服务器端
+			协同开发协商
+
+13、参数
+	请求参数获取：request中都有	request.getParameter("name");
+			或者直接获取全部参数的集合 Map<String,String[]>map=request.getParamterMap();
+	响应参数：response.getWriter().writer();
+	
+14、servlet默认单例模式，非线程安全的
+	线程安全问题：多个线程争抢同一个资源
+	解决方法：加锁，同步方法，同步代码块	synchronizated、Lock
+	
+	servlet默认是单例模式
+	单例模式：节省空间，会出现线程安全问题
+	多例模式：浪费空间，避免线程安全问题
+	
+	解决方案：1、实现SingleThreadModel	多例模式，不推荐，已过时
+			  2、加锁
+			  
+15、servlet常用对象
+	服务器在启动的时候会创建一个默认的servlet对象，该对象会找index.jsp或index.html
+	1、ServletConfig对象
+		获取web.xml中配置的一些参数，但一般不用，通常通过属性配置文件配置初始化参数
+		
+	2、HttpServletResponse：服务器发送
+		浏览器的行为受服务器控制
+		1、设置字符编码集,切记text/html分号charset=utf8
+        response.setContentType("text/html;charset=utf8");
+        2、设置响应头
+        //告诉浏览器3秒后跳转百度首页
+        response.setHeader("refresh","3;http://www.baidu.com");
+        //告诉浏览器不要缓存服务器发送的数据
+        response.setHeader("Cache-Control","no-cache");
+		
+		3、getWriter()获取字符输出流getOutputStream()获取字节输出流
+		给浏览器回写信息，通常见后台执行服务处理结果写入流中回写给客户端
+			应用场景：图形验证码:存储在内存中的缓存图片，通过IO流返给客户端
+					  文件下载：
+						1、客户端发送下载文件请求
+						2、服务器获取资源文件所在位置
+							若资源文件在WEB项目中可以通过servletContext对象获取
+						3、通过字节输入流读取文件信息
+						4、通过输出流response.getOutputStream输出到客户端
+						
+						注意：获取文件名、文件名乱码、
+							  设置告诉浏览器需要下载的文件的头信息，
+							  告诉浏览器下载的文件类型
+	3、HttpServletRequest：代表客户端请求
+		HttpServletRequest域对象：
+			特征：容器，可以存放数据
+				  生命周期：请求不中断，request一直存活，请求中断request就死亡了
+		1、解决乱码
+			request.setCharacterEncoding("utf-8");
+		2、获取客户端信息
+			getRequestURL：绝对路径
+			getRequestURI：相对路径：比绝对路径少协议和IP端口号
+			getRemoteAddr: 或客户的IP地址
+			getMethod: 获取请求方式get/post/..
+		3、转发(分发)dispatcher
+			1、服务器行为
+				可以是servlet内部转发，也可以转发至jsp
+			2、可以携带数据
+			3、转发的浏览器地址不变
+			4、转发只做了一次访问请求
+			5、转发两次跳转之间传输的数据不会丢失（request不调用removeAttribute）,
+				所以可以通过request进行数据的传递，指的是request域
+			6、转发只能将请求转发给同一个WEB应用中的组件
+				如果创建RequsetDispatcher对象时指定的相对URL以"/"开头，他是想对当前WEB应用程序的根目录
+			//转发前设置值
+			request.setAttribute("username",name);
+			//转发到其他WEB组件
+			request.getRequestDispatcher("/DispatcherServlet").forward(req,resp);
+			//转发后获取值
+			request.getAttribute("username");
+		4、重定向 redirect 	只做页面跳转
+			1、客户端行为
+			2、跳转的时候值丢失：因为没带request、response参数
+			3、地址栏发生改变
+			4、发送了最少两次请求
+			5、重定向既可以跳转到当前web项目内部，也可以跳转到外网
+			
+			//重定向:客户端重定向到WEB项目内部，必须带上项目名
+			resp.sendRedirect("/servlet/DispatcherServlet");
+			//重定向:客户端重定向到外网，绝对路径
+			resp.sendRedirect("http://www.baidu.com");
+			
+		总结：web项目地址写法
+			1、/必须加
+			2、加不加项目名
+				转发不需要加：服务器内部行为
+				重定向需要加：客户端行为
+	
+	4、Cookie对象
+		1、会话管理概念
+			会话：当前连接开始通信到通信结束
+			当前会话：浏览器访问服务器成功，到服务器给客户端响应数据，当关闭浏览器的时候，会话结束
+		2、为什么使用会话？
+			因为每次请求的数据都是不一样的，如果不适用绘画技术导致每次请求的数据就会丢失
+		3、会话技术分类
+			cookie：客户端技术
+			session：服务端技术	占用服务器内存
+				例如：用户登录  原理：依赖cookie:因为http服务器根据不同的客户端生成不同的session的JSESSIONID通过cookie回写给客户端,cookie默认是不关闭浏览器一直存在，而session在服务器端保存了用户信息，客户在不关闭浏览器的情况下且在session的生命周期内持续访问浏览器可以达到校验用户登陆状态
+		4、Cookie介绍
+			1、cookie通过response对象回写给客户端，客户端将cookie保存在客户机上，也可以不保存
+			是否保存时由服务器决定（根据代码指定cookie的生命周期）
+			2、每个站点cookie个数是受限制的，每个站点最多允许200个cookie，每个大小不能超过4kb
+			3、cookie分类
+				第一方cookie:当前站点的cookie
+				第三方cookie:跳转到其他站点返回的cookie
+			4、每个cookie只能存放一个信息，并且都是字符串
+		5、cookie的生命周期
+			>0:客户机会将cookie磁盘化，过期就失效
+			<0:浏览器默认的，关闭浏览器就失效
+			=0:即时失效，即服务器返回给客户端后立即失效
+			
+		6、修改cookie，key一样会覆盖
+		7、关于Cookie的编码和解码
+			//编码
+			new Cookie(URLEncoder.encode("姓名","utf-8"),URLEncoder.encode("张三丰","utf-8"));
+			//解码
+			String decode = URLDecoder.decode(c.getName(), "utf-8");
+			
+			//获取cookie
+			Cookie[] cookies = req.getCookies();
+			new Cookie(key,value);
+			//设置存活时间
+			cookie.setMaxAge(3600);//单位秒
+			//将cookie回写给客户端
+			 response.addCookie(pscookie);
+	
+	5、session：服务端技术 存储在服务器，占用服务器端内存
+		1、session原理：
+			详情参考图片
+		2、session域对象
+			容器，可以存放数据
+			生命周期:session在客户第一次请求时由http服务器创建，并保存在内存中。默认存活时间30分钟，同时生成JSESSIONID号存入cookie回写给客户端，用以区分不同客户。
+				需求：要求客户在关闭浏览器后还能在保持登陆状态，可以直接访问一些校验登陆状态的页面
+					延长客户端JSESSIONID的生命周期：可以手动设置将JSESSIONID存入cookie设置生命周期，通常设置为30分钟
+					延长服务端session的生命周期：session.setMaxInactiveInterval(1800);//单位秒，或者在web.xml配置
+					这样可以达到效果：用户关闭浏览器，在登录页面可以直接登录
+		3、session生命周期和session失效区分
+			session设置了生命周期相当于生老病死自然规律
+			session失效相当于默认情况下关闭浏览器就失效了，调用session.invalidate()立即失效
+		4、session超时：最后一次访问时间和当前时间差距大于指定的最大空闲时间，这时服务器就会销毁session对象，默认30分钟
+		5、session失效:
+			超过设置的超时时间
+			主动调用了invalidate方法
+			服务器主动或异常关闭
+			注意：浏览器关闭不会让session失效
+		6、session中设置参数：
+			session.setAttribute("name",value);
+			session.removeAttribute("name");
+			
+	6、ServletContext：servlet上下文
+		域对象：容器 setAttribute();
+				代表整个WEB项目
+		生命周期：服务器启动的时候创建，服务器关闭的时候销毁
+		如何获取？
+			request.getServletContext()方法
+			session.getServletContext()方法
+		例子：可以做埋点，多少人访问web应用程序
+		作用：经常访问服务器资源
+			req.getServletContext().getRealPath("/目录结构/filename.type");//从src开始或web开始
+			
+			
+	7、servlet的监听器：Listener
+		主要是监听域对象：request、session、servletContext
+		监听数据的变化(创建、销毁、增加、修改、删除等)，然后做出相应的响应处理
+		当范围对象的状态发生改变时，服务器自动调用监听器中的方法
+		例子：常用：统计在线人数、在线客户、系统加载时进行信息初始化、统计网站的访问量
+		
+		监听器在服务器启动的时候被创建，服务器停止的时候销毁，可以通过web.xml配置，也可以注解@WebListener
+		实现对应的接口实现方法可以在域对象状态发生改变时做一些操作，
+	
+	8、servlet的过滤器: Filter	web.xml配置或注解@WebFilter(urlPattern={"/payServlet"})
+		字符编码过滤器:在所有请求进来时首先设置字符编码集然后放行
+		登陆状态过滤器：根据业务需求，在涉及支付的时候判断登陆状态是否放行
+		
+		实现Filter接口，重写doFilter方法，编写过滤逻辑
+		注意：一定要设置放行 filterChain.doFilter(servletRequest,servletResponse);
+			urlPattern编写：后台需要拦截的类太多，一个个类名写麻烦也不好维护，可以在WebServlet配置
+			访问路径时统一口径，例如在/payServlet加.do，过滤器直接过滤.do结尾的，WebFilter(urlPattern=" *.do")
+		过滤器链:filterChain，过滤器执行的先后顺序按web.xml中的顺序定义

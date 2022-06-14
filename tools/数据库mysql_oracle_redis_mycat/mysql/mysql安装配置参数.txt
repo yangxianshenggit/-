@@ -1,0 +1,9 @@
+my.cof中配置编码方式和表明大小写忽略
+[mysqld]
+character-set-server=utf8
+# 表名大小写忽略
+lower_case_table_names=1
+[client]
+default-character-set=utf8
+[mysql]
+default-character-set=utf8

@@ -1,0 +1,208 @@
+springAOP
+	1、AOP？
+		横切性的关注点(concern):
+			这些关注点和业务关系不大，但必须存在，遍布在项目各个角落
+		AOP编程：利用AOP编程思想，把这些关注点解决
+		目标：功能必须在，把功能统一在一个地方管理，代码只想写一次
+	2、springAOP原理：
+		静态代理：
+			例子：代理方--》二手车：替买家买车，但最终还是买家买
+				  被代理方--》买家：买车
+			静态代理条件：
+				1、代理方和被代理方必须实现同一接口 buy(买)
+				2、代理方必须有被代理方对象的引用
+			弊端：
+				1、代码冗余，代理方和被代理方必须重写接口中所有的方法
+				2、代理类中代理对象受限制
+		JDK动态代理：对象地址带一个$
+			基于接口和实现类（被代理类）的关系创建代理类，实现接口中的功能（方法）进行的校验统一在一个地方管理
+			//代理类
+			public class JDKSportProxy implements InvocationHandler {/Invocation调用 Handler操作者
+			
+				/*测试
+				public static void main(String[] args) {
+					JDKSportProxy jdkSportProxy = new JDKSportProxy(new HeBei());
+					Buy buy = (Buy) jdkSportProxy.getInstance();
+					buy.buy();
+
+				}*/
+				//目标对象、被代理对象，通过构造方法传参进来
+				private Object target;
+
+				public JDKSportProxy(Object target) {
+					this.target = target;
+				}
+				//根据被代理类创建代理对象
+				public Object getInstance() {
+					//参数一：被代理对象的类加载器	
+					//参数二：被代理对象的父类接口 ，用于获取父类的信息 
+					//参数三：InvocationHandler对象
+					return Proxy.newProxyInstance(target.getClass().getClassLoader(), target.getClass().getInterfaces(), this);
+				}
+				//InvocationHandler接口的方法，可以自动调用
+				@Override
+				public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+					//定义校验
+					System.out.println("进行校验");
+					//执行目标方法
+					method.invoke(target,args);
+					return null;
+				}
+			}
+		cglib代理：基于创建普通类的子类实现的。对象地址带两个$$
+			public class Cglib implements MethodInterceptor {
+				//被代理对象
+				private Object target;
+
+				public Cglib(Object target) {
+					this.target = target;
+				}
+
+				public Object getInstance(){
+					//enhancer:增强器
+					Enhancer enhancer=new Enhancer();
+					//给被代理对象创建子类，需要知道父类的信息
+					enhancer.setSuperclass(target.getClass());
+					//设置回调函数，目的为了正确执行目标方法
+					enhancer.setCallback(this);
+					return enhancer.create();
+				}
+
+				@Override
+				public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+					//进行校验
+					//执行目标方法
+					methodProxy.invoke(o,objects);
+					//进行校验
+					return null;
+				}
+			}
+	3、AOP的概念
+		目标对象：target 被代理的对象
+		切面：Aspect	类似校验  和业务关系不大，但必须存在，遍布在项目各个角落的功能
+		消息/通知: Advice	类似于校验方法
+			分类：
+				前置通知：在执行目标方法（被代理对象的方法）之前执行
+				后置通知：在执行目标方法（被代理对象的方法）之后执行
+				环绕通知：在执行目标方法（被代理对象的方法）前后都执行
+				返回通知：有返回值执行
+				异常通知：出现异常执行
+		连接点：JoinPoint 对于可以执行Advice的方法	被代理对象的方法
+		切点：PointCut 具体哪些方法执行Advice(消息)	被代理对象的那些方法要进行校验
+		织入：Weave 将Advice应用到具体的PointCut上的过程 代码的执行过程:业务类的方法又包含advice方法执行
+	4、配置文件的方式实现SpringAOP
+		下面配置是JDK动态代理：基于接口和实现类（被代理类）
+		<!--被代理类-->
+		<bean id="beijing" class="com.kayak.springAOP.Beijing" />
+		<!--切面类-->
+		<bean id="jiaoYan" class="com.kayak.springAOP.JiaoYan" />
+		<!--aop配置-->
+		<aop:config>
+			<!--切点：具体可以执行消息的方法
+			expression:指定哪些类哪些方法执行了Advice
+			描述方法:访问修饰符 返回值类型 方法名(参数列表)		支持多个
+			-->
+			<aop:pointcut id="pointcut" expression="execution(public void com.kayak.springAOP.Beijing.buy()||...)"/>
+			<!--配置切面 aspect/advisor(考虑事务的传播特性)  ref：切面的bean-->
+			<aop:aspect id="aspect"  ref="jiaoYan" >
+				<!--配置消息:before前置通知 after:后置    
+				around:环绕（此处配置可以实现before、after，环绕通知对消息/通知方法有要求，详细看下）
+				method：消息对应的方法
+				pointcut-ref:切点
+				-->
+				<aop:after method="jiaoyan" pointcut-ref="pointcut"/>
+			</aop:aspect>
+		</aop:config>
+		
+		//环绕通知的校验方法
+		 public static void jiaoyan(ProceedingJoinPoint pj) throws Throwable {
+			//获取调用的方法名
+			String name = pj.getSignature().getName();
+			//获取调用的参数
+			Object[] args = pj.getArgs();
+			System.out.println("前置通知权限校验");
+			//执行目标方法
+			pj.proceed(args);
+			System.out.println("后置通知权限校验");
+		}
+	5、execution表达式：百度
+	6、springAOP一般是用来管理事务的，而事务通常在service层，因此execution表达式匹配到service层即可
+	7、纯注解方式AOP
+	配置类
+		@ComponentScan(basePackages = {"com.kayak.springaop"})//扫描包
+		@Configuration//标记该类是配置类
+		@EnableAspectJAutoProxy//开启aop配置
+		public class SpringAopConf {}
+	切面类
+		@Component//被spring管理
+		@Aspect//标记该类为切面类
+		public class Jiaoyan {
+			public static void security(){
+				System.out.println("权限校验");
+			}
+
+			//设置切点，该方法就是给切点注解占位用
+			@Pointcut("execution(* com.kayak.springaop.bean.Hebei.*(..))" +
+					" || execution(* com.kayak.springaop.bean.Shanghai.*(..))")
+			public void pointCut(){}
+
+		   
+			/*@Before("pointCut()")
+			public void before(JoinPoint joinPoint){
+				//获取调用方法的名字
+				String name = joinPoint.getSignature().getName();
+				security();
+			}*/
+
+		   @After("pointCut()")
+			public void after(JoinPoint joinPoint){
+				security();
+			}
+
+			/*@Around("pointCut()")
+			public void around(ProceedingJoinPoint joinPoint){
+
+
+				try {
+					security();
+					//调用目标方法
+					joinPoint.proceed();
+					security();
+				} catch (Throwable throwable) {
+					throwable.printStackTrace();
+				}
+			}*/
+			//执行目标方法后有异常执行
+			@AfterThrowing(value = "pointCut()",throwing = "exception")
+			public void around(Exception exception){
+				security();
+			}
+		   @Around("pointCut()")
+			public static void jiaoyan(ProceedingJoinPoint pj) throws Throwable {
+				//获取调用的方法名
+				String name = pj.getSignature().getName();
+				//获取调用的参数
+				Object[] args = pj.getArgs();
+				System.out.println("前置通知权限校验");
+				//执行目标方法
+				pj.proceed(args);
+				System.out.println("后置通知权限校验");
+			}
+		}
+	测试类
+		public class TestAopClass {
+			private AnnotationConfigApplicationContext context;
+			@Before
+			public void before(){
+				context = new AnnotationConfigApplicationContext(SpringAopConf.class);
+
+			}
+			@Test
+			public void test(){
+				String[] names = context.getBeanDefinitionNames();
+				System.out.println(names.toString());
+				Beijing beijing = (Beijing) context.getBean("hebei");
+				beijing.add();
+			}
+		}
+	

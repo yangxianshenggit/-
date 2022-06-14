@@ -1,0 +1,26 @@
+1、jar:
+	jar就是编译后的很多class文件
+	第一方jar:jdk的jar包
+	第三方jar:除了jdk以外的其他所有jar
+	
+	java项目导jar包：src同级目录新建文件夹lib,将要导入的jar拖进lib，然后右击lib选择add as Library
+	javaweb项目导jar:WEB-INF下新建文件夹lib,将要导入的jar拖进lib，然后右击lib选择add as Library
+2、数据库属性配置文件
+		db.properties，建议放在src[classpath]目录
+		涉及方法
+			 //通过这种方式可以从src目录下读取文件，因为src相当于classpath
+			InputStream stream =
+                JDBCUtil.class.getClassLoader().getResourceAsStream("mysql.properties");
+			Properties ps = new Properties();
+			ps.load(stream);
+			String value=ps.getProperty("key");
+		原因：
+			1、将连接数据库信息和java代码参杂在一起，通常称为硬编码
+			2、将数据库信息写在属性配置文件方便管理
+			
+3、web项目获取资源文件
+	//ServletContext代表整个WEB项目，getRealPath可以获取文件的绝对路径
+	request.getServletContext().getRealPath("name.type");
+	
+
+

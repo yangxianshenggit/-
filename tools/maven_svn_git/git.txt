@@ -1,0 +1,42 @@
+git:版本控制工具
+	主要概念
+	　repository：仓库／工作区	磁盘的文件夹
+	　	.git：版本库
+	　		stage：暂存区
+			master：git自动创建的主分支
+			HEAD：指针，指向主分支
+git操作：
+	1、首先创建工作区：在磁盘的某个位置新建文件夹
+	2、在工作区创建版本库：
+			在文件夹内右击选中git bash here,打开git命令窗口，输入git init
+			此时当前工作区内隐藏文件.git为版本库
+	3、新建文件至工作区，也可以在git窗口用linux命令操作
+	4、将文件添加到stage(暂存区)：git add <fileName>
+	5、将文件合并到主分支master上:git commit -m <message:注解，说明>
+		此时HEAD指针指向新提交的版本
+	6、修改文件后，需要再次添加至暂存区，然后提交主分支
+	7、查看git状态:git status
+	8、查看git日志：
+			git log 
+				commit e45c5c80d08ea6726d8016664ea316f2aba488b9 	提交的版本号
+				Author: yangshuai <598813791@qq.com>		操作者
+				Date:   Tue Jun 14 10:28:23 2022 +0800		时间
+
+			git log <--pretty=oneline>：一行显示
+	9、查看文件修改后未添加暂存区和已提交到master的差异：git diff <fileName>
+	10、重置(reset)到之前几个版本:git reset --hard 版本号前几位
+	11、查看文件操作过几次:git reflog <fileName>
+	12、修改撤销、删除
+		1、当你改乱了工作区某个文件的内容，想直接丢弃工作区的修改时，用命令git checkout -- file
+		2、当你不但改乱了工作区某个文件的内容，还添加到了暂存区时，想丢弃修改，分两步，第一步用命令git reset HEAD <file>，就回到了场景1，第二步按场景1操作。
+		3、已经提交了不合适的修改到版本库时，想要撤销本次提交，参考版本回退一节
+		4、彻底删除一个文件
+			git rm  file  
+			git commit
+	13、创建分支：git branch 分支名称
+		查看所有分支:git branch 
+		切换分支:git switch 分支名称
+		当分支上修改文件添加暂存区并提交后，
+		切换到master，然后合并分支	git merge 分支名称
+		
+		!!!注意：当在分支上进行重置，合并主分支后，主分支上也会进行重置操作

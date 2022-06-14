@@ -1,0 +1,79 @@
+	<!--
+    context:上下文
+    component：组件
+    scan:扫描
+    只要是java类都可以被看作bean对象
+    被扫描包下的类扫描后，不代表包下的类被spring管理，还需要被标记注解
+	
+	扫描包还可以加过滤器：
+        一、use-default-filters="false" 不使用默认的过滤器
+            1、  type:annotation 注解 expression表达式：指定注解
+                com.kayak.springioc包下过滤到Controller注解标记的类放行
+                <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+            2、 type:regex 正则 expression表达式：指定包下
+                com.kayak.springioc.bean1包下满足条件的类放行
+                <context:include-filter type="annotation" expression="com.kayak.springioc.bean1.*"/>
+         二、use-default-filters="true" 使用默认的过滤器 exclude-filter
+                <context:exclude-filter type="" expression=""/>
+                排除指定的bean
+    -->
+    <context:component-scan base-package="com.kayak.springioc,com.kayak.springioc2"/>
+	
+	<!--导入配置文件-->
+    <import resource="classpath:conf/IOC.xml" />
+	
+	<!--通过构造方法将属性注入 注意：构造方法必须存在 name:属性名	value：值-->
+    <bean id="dog" class="com.kayak.springioc.Dog">
+        <constructor-arg name="name" value="拉布拉多" />
+        <constructor-arg name="cock" value="导盲" />
+    </bean>
+	
+	<!--通过set方法给属性赋值
+	过程：先通过无参构造创建对象，然后在调用set方法赋值
+    name：set方法名截取set之后首字母小写的值
+    value：值
+	推荐使用set方法给属性赋值，因为构造方法可以重载，属性赋值不确定
+    -->
+    <bean id="dog1" class="com.kayak.springioc.Dog">
+        <property name="name" value="哈士奇" />
+        <property name="cock" value="二货" />
+    </bean>
+	
+	 <!--给通过set方法集合属性赋值-->
+	<bean id="person" class="com.kayak.springioc.Person">
+        <property name="names" >
+            <list>
+                <value>张三</value>
+            </list>
+        </property>
+        <property name="dogs">
+            <set>
+				 <!--这种方式无法通过id从beanfactory获取-->
+                <bean id="dog2" class="com.kayak.springioc.Dog">
+                    <constructor-arg name="name" value="秋田"/>
+                    <constructor-arg name="cock" value="卖萌" />
+                </bean>
+            </set>
+        </property>
+        <property name="maps" >
+            <map >
+                <entry key="外号" value="贱人" />
+            </map>
+        </property>
+    </bean>
+	
+	<!--对象属性注入-->
+    <bean id="user" class="com.kayak.springioc.User">
+        <property name="dog" ref="dog1"/>
+    </bean>
+	
+	<!--
+		bean的作用域scope:prototype多例、singletion单例
+		初始化方法：将对象加入IOC容器时调用
+		销毁方法：从IOC移除对象调用，多例模式不会调用
+		lazy-init懒加载，在获取bean的时候创建对象，默认false，开启时为true
+	-->
+	<bean id="dog" class="com.kayak.springioc.Dog" scope="prototype" 
+		init-method="init" destroy-method="destroy"
+		lazy-init="true">
+	</bean>

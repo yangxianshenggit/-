@@ -1,0 +1,58 @@
+{
+    "job": {
+        "setting": {
+			//速率
+            "speed": {
+				//每个task的并发的线程数
+                 "channel": 3,
+				 //每个管道的效率，单位byte/s 
+				 "byte": 1048576
+            },
+			//错误限制
+            "errorLimit": {
+				//记录数
+                "record": 0,
+				//百分比 1时100%
+                "percentage": 0.02
+            }
+        },
+		//内容
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",//选择的数据源
+                    "parameter": {
+                        "username": "${username}",
+                        "password": "${password}",
+                        "column": [
+                            "id",
+                            "name"
+                        ],
+						//切分主键：当指定时会将job切分，多线程执行
+                        "splitPk": "id",
+                        "connection": [
+                            {
+                                "table": [
+                                    "user"
+                                ],
+                                "jdbcUrl": [
+								//格式：jdbc:mysql://ip:port/dbase
+     "jdbc:mysql://192.168.31.129:3306/javase"
+                                ]
+                            }
+                        ]
+                    }
+                },
+               "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/tomcat/datax/files",
+                        "fileName": "mysql_txt",
+                        "writeMode": "truncate",
+                        "fieldDelimiter": "|"
+                    }
+                }
+            }
+        ]
+    }
+}

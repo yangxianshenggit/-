@@ -1,0 +1,66 @@
+{
+    "setting": {},
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 2
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "txtfilereader",
+                    "parameter": {
+                        "path": ["/home/tomcat/datax/files/*"],
+                        "encoding": "utf-8",
+                        "column": [
+                            {
+                                "index": 0,
+                                "type": "string"
+                            },
+                            {
+                                "index": 1,
+                                "type": "string"
+                            },
+                            {
+                                "index": 2,
+                                "type": "string"
+                            },
+                            {
+                                "index": 3,
+                                "type": "string"
+                            }
+                        ],
+                        "fieldDelimiter": "|"
+                    }
+                },
+                "writer": {
+                    "name": "mysqlwriter",
+                    "parameter": {
+                        "writeMode": "insert",
+                        "username": "root",
+                        "password": "1qaz2wsx",
+                        "column": [
+                            "id",
+                            "name",
+							"age",
+							"sex"
+                        ],
+                        
+                        "preSql": [
+                            "delete from @table"
+                        ],
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:mysql://192.168.31.129:3306/javase?useUnicode=true&characterEncoding=utf-8",
+                                "table": [
+                                    "user"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,92 @@
+maven
+1、项目构建：不需要手动干预，maven会自动完成
+	项目往往需要经历编译、测试、运行、打包、安装、部署
+	等一系列过程，以上过程都可以交给maven来进行管理
+	打包：
+		jar：布在服务器上
+		war:通常部署在servlet容器的
+2、maven重要功能
+	依赖管理：管理jar
+		把jar和本身依赖包都导进来
+	项目构建:maven将项目进行标准化，每个阶段使用一个命令
+			清理-->编译-->测试-->报告-->打包-->部署
+clean：清理、将tarage下的文件全部删除，打包失败必须清理
+validate
+compile：compile 是 maven 工程的编译命令，作用是将 src/main/java 下的文件编译为 class 文件输出到 target目录下。
+test：会运行test/java下所有测试类
+package：打包，将maven打成jar/war放在tarage下
+verify
+install：打包，maven的安装命令，执行将maven打成jar/war发布到本地仓库
+site:生成一些项目报告
+deploy
+3、maven核心配置文件：
+	conf/setting.xml
+		1、本地仓库位置(本地仓库)
+			<localRepository>D:\Maven\repository</localRepository>
+		2、仓库的镜像(远程仓库):
+			<mirror>  
+				<id>nexus-aliyun</id>  
+				<mirrorOf>central</mirrorOf>    
+				<name>Nexus aliyun</name>  
+				<url>https://maven.aliyun.com/repository/public</url>  
+			</mirror>
+4、环境变量:
+	JAVA环境变量，
+	MAVEN_HOME:到maven的安装目录即可,
+	path:配置到maven的bin目录
+5、配置完毕后dos查看maven版本号:mvn -v
+6、maven仓库：本质文件夹下放了很多jar
+  分类：本地仓库：pc机上
+		远程仓库：中央仓库：apache维护的远程仓库，maven默认的镜像就是该仓库
+		私服：公司的maven服务器
+		其他公共远程仓库：aliyun
+7、idea集成maven
+	setting-->Maven-->指定Maven_home、setting.xml、repository的路径
+8、新建maven项目看idea笔记
+	src
+		main
+			java
+				源码
+			resources
+				配置文件
+			webapp
+				静态资源文件
+		test
+			java
+				测试类
+			resources
+				测试的配置文件
+		tarage:编译的文件
+		pom.xml:依赖管理、插件
+9、pom文件:配置jar和各种插件
+		<!--项目坐标：本地仓库中可以找到
+		groupId：域名+公司名称
+		artifactId：项目名/模块名称
+		version:版本号
+		packaging:打包方式
+		-->
+		<groupId>com.liulangcat</groupId>
+		<artifactId>maven_servlet_mybatis</artifactId>
+		<version>1.0</version>
+		<packaging>war</packaging>
+
+		<!--编码方式、java编译版本-->
+		<properties>
+			<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+			<maven.compiler.source>1.7</maven.compiler.source>
+			<maven.compiler.target>1.7</maven.compiler.target>
+		</properties>
+		<!--依赖-->
+		<dependencies>
+		...
+		</dependencies>										
+	
+	将本地仓库导入项目中：通过坐标gav，坐标可以通过maven中央仓库查
+10、依赖的作用域scope
+		范围		编译		测试		运行
+		compile		√			√			√			
+		test					√					
+		provided	√			√					
+		runtime					√			√		
+		system		√			√			
+11、maven报一些找不到jar时，可以在pom中引入		

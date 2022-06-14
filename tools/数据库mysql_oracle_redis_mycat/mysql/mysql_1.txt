@@ -1,0 +1,306 @@
+mysql
+一、数据库概述：
+	1、什么是数据库
+		File：查找文件所在目录
+		IO流：操作文件内容，管理数据；但操作复杂，特别是查询
+		数据库：按照数据结构来组织、存储和管理数据的仓库。简称DB
+		数据库软件管理系统DBMS，如Oracle、MySql、SQLServer
+	2、表介绍
+		表（table）是一种结构化文件，可以用来存储特定类型的数据。表都有特定名称，一个表空间中表名不能重复
+		表中有几个概念：
+			列名（字段名）：字段名称、字段数据类型、字段约束、字段长度
+			行（记录）
+			主键；每条记录的唯一标识
+	3、SQL概述
+		全称叫做结构化查询语言
+		
+		sql分类：
+		
+二、mysql常用命令
+	1、重启mysql:service mysql restart
+	2、登录mysql客户端:mysql -h IP -P 端口 -p 数据库名称 -u 用户
+	3、mysql版本：mysql -V	or mysql --version
+	4、注意linux安装完毕的mysql一定要配置字符编码集，否则插入中文报错。
+			在mysql的安装目录的my.cof或/etc/my.cof中加入
+				[mysqld]
+		　　　　character-set-server=utf8 
+		　　　　[client]
+		　　　　default-character-set=utf8 
+		　　　　[mysql]
+		　　　　default-character-set=utf8
+			然后启动，若已启动则重启	
+			
+			1.启动：service mysql start
+
+			2.停止：service mysql stop
+
+			3.重启：service mysql restart
+
+
+	5、操作数据库相关命令：
+			mysql相关信息：\s
+			查看mysql的所有数据库：show databases;
+			查看当前数据库下的表：show tables;
+			切换数据库: use 数据库名称;
+			创建数据库：create database 数据库名称;
+				注意编码:若安装时配置过utf-8则不用管，若不是则需输入命令
+				CREATE DATABASE IF NOT EXISTS 数据库名称 DEFAULT CHARSET utf8;
+			mysql配置文件：my.cof
+			查询当前使用的数据库：select database();
+			查询使用的字符编码：show create database 数据库名称;
+			删除数据库：drop database 数据库名称;
+			查看当前数据库的字符编码集：show VARIABLES like 'character%';
+				重点看 character_set_database   | utf8 
+					   character_set_server     | utf8
+			查看数据库连接数和状态：
+				show full processlist;
+				show status;
+	6、操作表的命令：
+			查看其他数据库的表：show tables from 数据库名称;
+			查看表结构（字段、数据类型）：desc 数据库名称.表名称;
+			查看表的创建语句：show create table 数据库名称.表名;
+			sql导入数据库
+				sourse sql文件的目录;
+				当sql文件太大时，用source命令完成初始化
+			
+			如果想要终止一条正在编写的语句，可键入\c。
+		
+	7、什么是“sql脚本”？
+		文件扩展名是sql，并且该文件中编写了大量的sql语句，称这样的文件为sql脚本
+		注意：用source命令可以直接执行sql脚本
+三、sql分类
+	1、mysql数据类型：
+		类型  										描述
+			字符串
+				char(长度)							定长字符串，存储空间大小固定，适合作为主键或外键
+				varchar(长度)						变长字符串，存储空间等于实际数据空间
+			小数
+				double(有效数字位数，小数位)		数值型
+				float(有效数字位数，小数位)			数值型
+			数值通用
+				numeric(有效数字位数，小数位)		数值型,既能表示小数，又能表示整数
+				decimal(有效数字位数，小数位)		数值型,既能表示小数，又能表示整数
+			整数
+				int(长度)							整型
+				tinyint(长度)						整型(short)
+				bigint(长度)						长整型(long)
+			日期
+				date								日期型 年月日
+				time								日期型 时分秒
+				dateTime							日期型 年月日 时分秒 毫秒
+				timestamp							日期型 年月日 时分秒 时区
+			二进制数据
+				blob								Binary Large OBject（二进制大对象）,存储音频、视频、图片
+			大文本
+				clob								Character Large OBject（字符大对象）,Oracle
+				longtext							存储大文本，也可以用text
+	2、char和varchar区别：
+		varchar: 可变的固定长度字符串类型
+				必须指定 字段可以存储的最大的字符个数
+				如果添加内容超过指定字符个数，将不会允许插入
+				如果添加内容长度小于指定字符个数，字段将采用实际空间存储
+				时间换取空间效率
+		char：不可变的固定长度字符串类型**
+				必须指定 字段可以存储的最大字符个数
+				如果添加内容超过指定字符个数，将不会允许插入
+				如果添加内容长度小于指定字符个数, 字段使用空格来填充剩余位置
+				检索数据时，mySql自动将char类型的内容结尾处的所有空格进行删除，不能将以空格结尾的字符串添加到char类型，因为查询时将会丢失掉这个空格
+				空间换取时间效率
+				场景：字段定长查询，按所有位一次查询
+					例如手机号定长11位，性别定长1位，数据量大的情况下效率明显比varchar高
+		数据库存储超大数字，使用字符串；java中针对超大整数进行运算可以使用BigInteger;	
+	3、操作表
+		建表语句
+			create table 数据库名称.表名称(
+			   columnName dataType(length),
+			   ...
+			   columnName dataType(length)
+			);
+		删除表
+			drop table 表名...;
+		修改表名
+			alter table 表名 rename to 新表名;
+		查看表状态
+			show table status like '%表名%';
+		查看建表语句
+			show create table 表名;
+	4、表结构修改
+		添加字段
+		alter table 表名 add columnName dataType(length);
+		修改字段
+		alter table 表名 modify columnName	dataType(length);
+		删除字段
+		alter table 表名 drop columnName;
+		
+	5、表数据添加、修改、删除
+		添加数据
+		insert into 表名(字段...) values(值...);
+		如何插入日期
+			1、mysql支持直接插入的日期格式和显示的日期格式一致的字符串，oracle不支持
+			2、插入系统时间now()代表当前系统时间
+			3、STR_TO_DATE(str,format)字符串转日期函数：str表示日期字符串符合当前表内数据格式，format表示日期格式
+				str_to_date('2022-05-31','%Y-%m-%d');
+		修改数据
+		update 表名 set 字段=值,.. where ...
+		
+		删除数据
+		delete from 表名 where ...
+		
+		表复制:只会复制字段和记录，不会复制约束
+		create table 新建表 as select 字段.. from 复制表;
+		
+四、表约束
+	目的：保证数据的合法性
+	1、主键约束： primary key
+		特点：不能为空(null),不能重复
+		分类：
+			单一主键：
+				自然主键：单纯为了区分记录的不同;例如主键自增auto_increment,插入语句可以不写自增主键，自增只能用于整数类型
+				代理主键：除了区分记录的不同，具有一定的业务意义
+			复合（联合）主键：多个字段相加结果不同，也可以区分记录
+	2、非空约束：not null
+		特点：字段值不能为null
+	3、唯一约束：unique
+		特点：不能重复，可以为空
+	4、外键约束：foreign key
+		作用：保证数据的完整性，对父表操作时，受外键约束，子表操作不受影响
+			子表设置外键
+			1和n的概念:
+			部门：父		员工：子
+			父表：1的一方
+			子表：n的一方
+		约束的值：
+			restrict（限制、约束）：删除或更新父表时报错
+			cascade（串联）：级联，删除或更新时父表时子表也会进行一样的操作
+			NO ACTION（行动）：删除或更新父表时报错
+			SET NULL：删除或更新父表时子表中相关联的外键字段值设为null
+	5、检查约束：check	mysql不支持 
+		例如：性别 只能是男or女	其他不存在
+		
+	语法案例：
+		drop table if exists `test1`;
+		create table `test1`  (
+		  `tid` int(11) not null auto_increment comment 'id',
+		  `tname` varchar(20) not null comment '姓名',
+		  `tage` tinyint(3) not null comment '年龄',
+		  `tphone` char(11) not null unique comment '手机号' ,
+		  -- 非空、唯一约束
+		  `thiredate` datetime(0) not null comment '入职时间',
+		  `tdeptno` int(2) not null comment '部门编号',
+		  primary key (`tid`, `tname`, `tphone`) using btree,
+		  -- 联合主键`tid`, `tname`, `tphone`
+		  index `fk_tt`(`tdeptno`) using btree,
+		  constraint `fk_tt` foreign key (`tdeptno`) references `tdept` (`tdeptno`) on delete restrict on update cascade
+		  -- 约束 `fk_tt` 外键 (`tdeptno`) 引用 `tdept` (`tdeptno`)
+		);
+		
+五、查询sql
+	1、开发中不建议使用select * ，可读性不强，某种情况下会增加查询时间
+	2、字符串必须使用单引号或双引号
+	3、针对别名方式 as '' ,其中as能省略；一个sql语句中别名可以不考虑执行先后顺序，各个环节可以通用
+		例如：select count(*) num,job from emp group by job having num>3;
+	条件查询
+		4、不等于 <>  或 !=
+		5、双闭区间 between..and...
+		6、为空 is null  不为空 is not null
+		7、or 相当于包含，例如job等于销售或者财务的员工
+		8、表达式的优先级：不确定的用小括号括起来
+		9、in 包含，与or作用相同 语法：字段 in(值...)
+		10、not 不 与其符号连用 
+			例如 not in(值..)	is not null   not (字段=值or 字段=值)
+		11、模糊查询：like '%%'	或'_'
+			%代表一到n个字符
+			_代表一个字符
+	排序查询
+		12、order by 字段1,字段2	
+			采用多个字段排序，如果根据第一个字段排序重复了，会根据第二个字段排序
+			默认升序 asc，指定倒序desc
+	聚合函数	
+		13、sum		求和	
+			avg		取平均
+			max		取最大的数
+			min		取最小的数
+			count	取得满足条件的记录数
+			count(字段)：排除null的记录数
+			count(1)或count(*)记录总数
+			distinct排重	count(distinct 字段)	查询字段的种数
+				distinct修饰的字段必须放在第一位
+			当某个字段有值为null时做聚合函数运算则使用ifnull(字段,0)
+			当字段为null时转换为0，例如sum(sal+ifnull(comm,0))
+			
+		注意：wehere语句中不能使用聚合函数
+		 因为聚集函数要对全列数据时行计算，因而使用它的前提是：结果集已经确定！而where子句还处于“确定”结果集的过程中，因而不能使用聚集函数。
+		而having子句中可以使用聚合函数，因为结果集已确定
+	分组查询：去重归类
+		14、group by 字段1，字段2
+			去重：字段1和字段2一致的记录只取一行的
+		
+		15、如果想对分组数据再进行过滤需要使用having子句，having可以使用聚合函数，having不能单独使用，只是配合分组后过滤
+		
+	select 字段/函数
+	from 表名
+	where 条件 
+	group by 字段/函数
+	having 字段/函数(就是为了过滤分组后的数据而存在的—不可以单独的出现)
+	order by 字段/函数
+	limit a,b
+	union 
+	...
+	以上语句的执行顺序:
+	1. 首先执行where语句过滤原始数据
+	2. 执行group by进行分组
+	3. 执行having对分组数据进行操作
+	4. 执行select选出数据
+	5. 执行order by排序
+	6. 执行分页操作，a 从下标a开始查询，b 查询多少条记录
+
+	原则：能在where中过滤的数据，尽量在where中过滤，效率较高。having的过滤是专门对分组之后的数据进行过滤的。
+	
+	连接查询（跨表查询）：需要关联多张表进行查询
+		笛卡尔乘积：多张表关联查询没设置关联条件，暴力的将结果集相乘，但有时候两张表关联查询没有可以关联的字段，需要用到笛卡尔乘积原理进行匹配，这时就看where条件限制了
+			例如：
+				-- 每个部门平均薪水等级
+				select avgsal,deptno,grade from (select avg(sal) avgsal ,deptno from emp  group by deptno) e1 ,
+				salgrade s where e1.avgsal between s.losal and s.hisal
+		内连接：
+			92语法：select * from emp e ,dept d where e.deptno=d.deptno;
+			99语法: select * from emp e inner join dept d on e.deptno=d.deptno;
+			99语法可以将连接条件和查询条件区分开，可读性更强
+		外连接
+			左外连接：表1 left join 表2 on 连接条件
+			右外连接：表1 right join 表2 on 连接条件
+			
+			区别：左连接表1中所有数据全部展示，表2只展示和表1关联的数据，表2中和表1未关联数据不展示
+				  右连接表2中所有数据全部展示，表1只展示和表2关联的数据，表1中和表2未关联数据不展示
+				  
+			左外连接能完成的效果右外连接也能完成
+	
+	表的关系：
+		1-1：用户-->身份证号 1-1
+			 身份证号-->用户 1-1
+		1-n：用户-->订单 1-n
+			 订单-->用户 1-1
+		n-n：老师-->学生 1-n
+			 学生-->老师 1-n
+		
+		从1开始看，左边是1
+
+六、子查询
+	1、select语句中嵌套select
+		概念：
+			临时表：不是实际存在磁盘上的表，可以将每次查询的结果集看作一个临时存在的表，可以使用临时表中的数据进行查询
+	2、分类：
+		select后的子查询 
+			注意：select后子查询最终只能取一个字段的结果集，且子语句中必须加上关联条件
+		from后的子查询
+		where后的子查询,
+			注意如果子查询结果集为一列多行，多对多进行匹配要用 in;如果子查询结果集为一行，多对一用 =或>或<，多对多;多对多写不出来或太麻烦
+
+七、union 合并结果集
+	合并结果集，需要对应查询字段的个数相同。在oracle中字段的类型也要求相同
+	
+八、limit 分页
+	limit a ,b 	a:索引，从索引处开始查询，b:每次查几条
+	limit 0,5	从第0条开始，查5条
+	a=(page-1)*b;//这里的页码是从1开始
+	总记录数%b==0?总记录数/b:总记录数/b+1;//总页数

@@ -1,0 +1,60 @@
+注意：可以在配置类中设置方法配置bean,也可以在类上设置bean
+@ComponentScan(basePackages = {"com.kayak.springioc"})//批量扫描包
+@Configuration//标记该类是配置类
+public class SpringIOCConf {
+    @Scope("singleton")//prototype或singleton
+    @Lazy//默认true开启懒加载
+    @Bean("user")//可以配置别名，默认id为方法名
+    public User getUser(){
+        return new User();
+    }
+    @Scope("prototype")//prototype或singleton
+    @Lazy//默认true开启懒加载
+    @Bean//可以配置别名，默认id为方法名
+    public Dog getDog(){
+        return new Dog();
+    }
+}
+
+public class User{
+·	@Autowried//按类型注入
+	private Dog dog;
+	
+	@Value("张三")
+	private String name;
+	
+	@PostConstruct//配置bean在IOC初始化方法，javax包下的注解
+    public void init() {
+        System.out.println("初始化方法");
+    }
+
+    @PreDestroy//配置bean在IOC销毁方法，javax包下的注解
+    public void destroy() {
+        System.out.println("销毁方法");
+    }
+	set/get
+}
+public class Dog{}
+
+public class TestIOC2 {
+    AnnotationConfigApplicationContext annotationConfigApplicationContext ;
+    @Before
+    public void before(){
+        //相当于创建IOC容器
+         annotationConfigApplicationContext =
+                new AnnotationConfigApplicationContext(SpringIOCConf.class);
+    }
+
+    @Test
+    public void test(){
+        //获取所有bean的id
+        String[] names = annotationConfigApplicationContext.getBeanDefinitionNames();
+        User bean = (User) annotationConfigApplicationContext.getBean("getUser");
+    }
+
+    @After
+    public void after(){
+        annotationConfigApplicationContext.close();
+    }
+}
+

@@ -1,0 +1,3 @@
+6、mvc架构：
+	实体类：domain、pojo、bean、entity
+	目的：分工，各司其职

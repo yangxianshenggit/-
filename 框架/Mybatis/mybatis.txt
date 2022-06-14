@@ -1,0 +1,225 @@
+Mybatis：
+	JDBC PK Mybatis
+		1、JDBC缺点：
+			sql硬编码：sql和java代码混在一起
+			连接管理：每次操作数据库都要创建连接
+			关于查询结果集的获取太繁琐
+		2、Mybatis
+			将sql放在映射文件中统一管理，实现了sql和代码分离
+			使用数据库连接池进行管理
+			直接将查询的结果集封装到对象或集合中
+		
+	Mybatis的简单原理：
+		1、导入jar、配置文件
+			配置文件分为	Mybatis全局配置文件	
+								SqlMqpConfig.xml:配置数据库连接池，导入映射文件
+							Mybatis映射文件：xxxMapper.xml:编写sql的地方
+		2、由配置文件+jar-->SqlSessionFactory(单例)
+		3、由SqlSessionFactory创建很多个SqlSession(接口，提供了很多API)
+			会话：从通信成功开始到通信结束
+			SqlSession：mybatis框架和数据库通信开始到结束
+		4、由SqlSession下的基本执行器和缓存执行器与数据库交互
+	
+	Mybatis的原理：
+		百度
+	Mybatis开发方式：
+		1、原始Dao方式：
+			包结构后可以直接体现，dao--impl
+			使用sqlSession直接操作数据库
+			sqlSession.selectOne("sqlId",Object obj);
+		2、使用Mapper映射方式开发
+			包结构：mapper只写接口
+			使用框架中的JDK动态代理方式创建接口的实现类
+		3、Mapper开发方式的要求
+			1、持久层包名推荐写mapper，实体类名为实体类名+Mapper
+			2、持久层类名和映射文件名保持一致(推荐)，扩展名除外
+			3、映射文件中namespace必须是接口路径
+			4、sqlId的值必须和接口中的方法名保持一致
+			5、parameterType的类型必须和接口中对应方法的类型保持一致
+			6、resultType的类型必须和接口中对应方法的返回值类型保持一样
+			
+			Mapper获取方式：T t=sqlSession.getMapper(Clss<T>clazz);
+							参数：接口的字节码
+							返回值：返回接口的实现类
+							
+	parameterType:参数类型：基本数据类型:
+								一个参数#{变量名}符合命名规范即可
+								两个参数#{变量名},还要使用@Param注解在持久层接口进行参数纠正
+								两个参数以上的推荐使用对象
+							对象类型:
+								标准pojo:实体类属性名和数据库表中的字段一一对应
+									使用场景：单表查询
+								自定义pojo：实体类属性名和数据库表中的字段不一一对应
+									使用场景：面对多表联查且查询条件很少变化
+							Map类型:
+								使用场景：任何情况	Map<String,String> param
+										  映射文件#{map的key}
+	注意：mybatis的配置文件中模糊查询 '%'空格#{变量名}空格'%' 	
+		  mybatis框架可以将属性的类型转为字符串，也就是说所有实体类属性整成字符串
+	resultType:针对查询
+				输出结果集类型：
+					List<T>/对象类型：
+						标准pojo：单表查询
+						自定义pojo:不建议使用，查询结果集中的字段随时发生改变
+					Map类型:
+						返回结果集一般写List<Map<String,String>> list,其中每个map都是一条记录
+					基本数据类型：
+						不写也行
+	resultMap:
+	#和$区别
+		相当于preparedStatement和stateStatemnt的区别
+		#底层调用了preparedStatement，实现sql预编译和防止sql注入
+			但这个防止sql注入是给变量加了单引号，有些sql需要拼接字段名或sql关键字，加了单引号会失效
+			例如根据某个字段排序，今天升序，明天降序，若在不改动sql的前提下只改变量值，则需使用${}
+		$底层调用了stateStatemnt，字符串拼接，有sql注入风险
+	动态Sql:
+		插入之后获取主键 要求：表的主键必须是自增的
+			方式一：
+				xxxMapper.xml中在插入语句上配置：
+					<!--resultType:主键类型,keyProperty:插入对象的主键字段名,
+					order: 
+						AFTER:插入记录之后获取 mysql支持:有个函数：LAST_INSERT_ID()	
+						BEFORE:插入记录之前获取 mysql不支持	oracle支持：序列(sequence)	-->
+					<selectKey resultType="int" keyProperty="插入对象的主键字段名" order="AFTER/BEFORE">
+						select LAST_INSERT_ID()
+					</selectKey>
+				代码中如何获取？插入的对象中的主键属性获取
+				注意：这种方式插入语句和获取主键语句互不影响，也就是说插入成功才执行获取主键语句，获取主键语句有可能失败
+			方式二：
+				在inser标签上配置useGeneratedKeys=true
+				<insert id="addDept" keyProperty="deptno" useGeneratedKeys="true" parameterType="com.bjpowernode.mybatis.bean.Dept">
+		sql片段：
+			公司规定查询语句不让使用*
+			xxxMapper.xml中配置：
+				<sql id="sql片段标识，自定义">
+					字段名,字段名...
+				</sql>
+				使用：在需要这些字段的地方引入<include refid="sql片段标识，与sql片段的id对应" />
+		if/where:
+			多条件查询经常碰到条件拼接问题，只根据名字查询/只根据工资查询...这样在代码中判断太多，可以在sql中判断
+			where:有条件加where，没有条件则不加
+					where可以去除前and
+			if：一般做非空或非null或等于某个值的判断
+			<where>
+				<if test="ename !=null and ename != '' ">
+					e.ename=#{ename}
+				</if>
+				<if test="sal !=null and sal != '' ">
+					and e.sal=#{sal}
+				</if>
+			</where>
+		trim:可以去除多余的后and（针对条件）和逗号（针对修改）
+			prefix:前缀，可以代表trim之前的sql
+			prefixOverrides：去除前and或前逗号
+			suffix:后缀，可以代表trim之后的sql
+			suffixOverrides：去除后and或后逗号
+			<trim prefix="" prefixOverrides="" suffix="" suffixOverrides="">
+				<where>
+				<if test="ename !=null and ename != '' ">
+					and e.ename=#{ename} 
+				</if>
+				<if test="sal !=null and sal != '' ">
+					and e.sal=#{sal}
+				</if>
+			</trim>
+		分页插件:
+			1、导入依赖
+			2、SqlMapConfig：配置分页插件配置
+			3、 int p=pageNum==null?1:Integer.parseInt(pageNum);
+                //开启分页：参数1：页数；参数2：每页记录数
+				//该行代码框架会自动将下一页的记录查出来
+                PageHelper.startPage(p,pageSize);//开启分页，相当于在sql后面加上	limit a,b
+                List<Emp> list = empService.queryAll();
+                PageInfo<Emp>pageInfo=new PageInfo<>(list);
+                List<Emp> list1 = pageInfo.getList();
+			4、总页数、总记录数...信息都可以从pageInfo中取
+		foreach:批处理
+			collection：mysql只支持list/array
+			item：集合或数组每次取出的对象/值
+			separator：分隔符
+			open:循环体的前缀
+			close：循环体的后缀
+			批量删除
+				delete from DEPT where deptno in
+				<foreach collection="array" item="id" separator="," open="(" close=")">
+					#{id}
+				</foreach>
+			批量添加
+				insert into DEPT (deptno,dname,loc) values
+				<foreach collection="list" item="dept" separator=",">
+					(#{dept.deptno},#{dept.dname},#{dept.loc})
+				</foreach>
+	配置：
+		1、添加jar	mybatis-3.5.0.jar
+		2、添加配置文件
+			SqlMapConfig：注意标签的顺序
+			
+				<!--导入数据库文件-->
+				<properties resource="db.properties"/>
+				
+				<settings>
+					<!-- 控制台打印sql语句 -->
+					<setting name="logImpl" value="STDOUT_LOGGING"/>
+				</settings>
+				 <!--给实体类指定别名-->
+				<typeAliases>
+					<!--方式一：给每个实体类都起别名,不推荐，麻烦-->
+					<!--<typeAlias type="com.bjpowernode.mybatis.bean.Dept" alias="dept" />-->
+					<!--方式二：扫描包-->
+					<package name="com.bjpowernode.mybatis.bean"/>
+				</typeAliases>
+				<!--environment:环境
+					default：配置不同的环境
+						development：开发
+						product:生产
+				-->
+				<environments default="development">
+					<environment id="development">
+						<transactionManager type="JDBC" />
+						<!--type="POOLED" 数据库连接池-->
+						<!-- 配置数据源（连接池） 
+						这里 type 属性的取值就是为 POOLED、UNPOOLED、JNDI
+						-->
+						<dataSource type="POOLED">
+							<property name="driver" value="com.mysql.jdbc.Driver"/>
+							<!--localhost:3306/1795?setUnicode=true&characterEncoding=UTF8&serverTimeZone:UTC-->
+							<property name="url" value="jdbc:mysql://192.168.31.132:3306/web"/>
+							<property name="username" value="root"/>
+							<property name="password" value="1qaz2wsx"/>
+						</dataSource>
+					</environment>
+				</environments>
+
+				<!--将映射文件导入进来-->
+				<mappers>
+					<mapper resource="DeptMapper.xml" />
+				</mappers>
+				
+				<plugins>
+					<!--分页插件-->
+					<!--如果不配置拦截器，会导致每次查询的都是所有数据-->
+					<!-- com.github.pagehelper为PageHelper类所在包名 -->
+					<plugin interceptor="com.github.pagehelper.PageInterceptor">
+						<!-- 使用MySQL方言的分页 -->
+						<property name="helperDialect" value="mysql"/><!--如果使用mysql，这里value为mysql-->
+						<property name="pageSizeZero" value="true"/>
+					</plugin>
+				</plugins>
+				
+			xxxMapper.xml:
+				<!--namespace:持久层接口的完整类名
+							  主要作用：mybatis通过JDK动态代理生成持久层接口的实现类，
+							  若是不使用mapper代理开发，可以不写-->
+				<mapper namespace="/">
+				<!--id:sql的唯一标识，若是使用sqlsession调用的方式调用可以随便起，但若是动态代理必须对应接口中的方法名-->
+					parameterType：sql参数类型:对象写完整类名或别名，基本数据类型则直接写；也可以不写
+								   #{}底层通过preparedStatement设置参数，防止sql注入
+								   ${}底层通过字符串拼接实现，有sql注入风险，但效率比#{}块
+					resultType:返回结果集，若返回影响记录数可以不写，
+							   若是返回对象，必须写，若是实体类在SqlMapConfig.xml中起别名了，可以写别名，否则写完整类名
+							   若是返回集合，必须写，写集合的泛型类型即可
+							   
+					-->
+				<insert id="addDept" parameterType="com.bjpowernode.mybatis.bean.Dept">
+					insert into DEPT(deptno,dname,loc) values(#{deptno},#{dname},#{loc})
+				</insert>

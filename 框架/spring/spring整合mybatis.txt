@@ -1,0 +1,58 @@
+AOP:
+  1、AOP最初概念，基本思想
+  2、设计原理
+  	JDK动态代理、Cglib代理
+  3、通过案例解释原理
+  4、通过自己编写JDK动态代理实现了事务的管理(Mybatis)
+  5、卖电脑案例:
+    -->
+    target ***
+    aspect ***
+    advice ***
+    joinpoint
+    pointcut ***
+    wave
+  6、SpringAOP是如何完成AOP的配置	配置文件版本
+  7、AspectJ通过注解完成AOP配置
+  8、Spring和Mybatis
+     1、完全可以使用Mybatis这个框架单独开发
+
+     2、为什么要使用Spring整合Mybatis
+     IOC AOP
+     IOC:
+	SqlSessionFactory
+	Mapper接口
+	指定别名
+ 
+    AOP:管理事务
+
+spring整合mybatis
+	步骤：
+		1、依赖
+		2、配置文件
+			applicationContext.xml:spring配置
+			sqlMapConfig.xml:mybatis配置
+			xxxMapper.xml:sql
+			db.properties:数据库属性文件
+		3、测试类
+		4、编写项目
+	配置文件思路：
+		spring:
+			<!--扫描包：配置bean-->
+		dao:
+			<!--导入配置文件db.properties-->
+			<!--
+			需要配置数据源，使用数据库连接池:c3p0、dbcp、druid
+			配置SqlSessionFactory:交给springIOC管理
+			-->
+			<!--扫描mapper接口，目的为了给mapper接口生成子类-->
+
+		service:
+			<!--AOP配置：管理事务-->
+			
+			<!--事物的传播特性-->
+
+web项目如果有web.xml初始化spring的配置文件可以通过servletContext初始化参数和listener加载spring配置
+
+			
+	

@@ -1,0 +1,60 @@
+{
+    "setting": {},
+    "job": {
+        "setting": {
+            "speed": {
+				//通道数量=并发数，设置为2
+                "channel": 2,
+				//通道速度：1mb/s
+				"byte": 1048576
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "txtfilereader",
+                    "parameter": {
+						//文件路径
+                        "path": ["/home/tomcat/datax3.0/file/o*"],
+						//编码方式
+                        "encoding": "UTF-8",
+                        "column": [
+                            {
+                                "index": 0,
+                                "type": "String"
+                            },
+                            {
+                                "index": 1,
+                                "type": "String"
+                            }
+                        ],
+                        "fieldDelimiter": "|"
+                    }
+                },
+                "writer": {
+                    "name": "oraclewriter",
+                    "parameter": {
+                        "username": "${username}",
+                        "password": "${password}",
+                        "column": [
+                            "cust_no",
+                            "mobile"
+                        ],
+						//执行写入前先执行的sql，若操作的表有为要写入的表则用@table代替
+                        "preSql": [
+                            "delete from @table"
+                        ],
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:oracle:thin:@(DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = ${dbIP})(PORT = ${dbPort})))(LOAD_BALANCE = NO)(FAILOVER = ON)(CONNECT_DATA = (SERVICE_NAME = orcl)))",
+                                "table": [
+                                    "HX_CUST_INFO2"
+                                ]
+                            }
+                        ]
+                }
+            }
+		}
+	]
+}
+}

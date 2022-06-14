@@ -1,0 +1,8 @@
+String\StringBuffer\StringBuilder
+String构造：
+	new String(byte [] bs)
+	new String(byte[]bytes,begindex,endindex) 
+	new String(char[]cs)
+	new String(char[]cs,begindex,endindex)
+常用方法：
+	byte[] getBytes();String 转 byte[]

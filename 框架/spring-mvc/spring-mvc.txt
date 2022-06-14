@@ -1,0 +1,198 @@
+springMVC：
+	基于MVC架构，功能分工明确。解耦合
+	作为Spring框架的一部分，能够使用Spring的IoC,Aop等功能。方便的整合MyBatis,Hiberate,JPA等
+	SpringMVC强化注解的使用，在控制器，Service，Dao都可以使用注解注入对象。方便灵活。
+	
+	1、原理：百度/查看图片
+		用户通过客户端发送请求给服务器，服务器接收请求
+		通过分发器：DispatcharServlet 调用处理器适配器、处理器映射器找到
+		对应的controller中对应的方法，然后处理客户端请求
+		最后给客户端响应是通过视图解析器   携带数据跳转到指定的模板引擎(jsp等)
+		
+	2、入门：
+		1、导jar
+		2、配置：
+			1、配置DispatcherServlet,在web.xml中配置。服务器启动的时候会自动读取web.xml
+			   DispatcherServlet分发器会根据用户请求跳转到对应的controller,服务器启动后随时会接收客户请求
+			   因此需要在服务器启动的时候加载DispatcherServlet
+			   而springMVC启动的时候会自动到/WEB-INF下找servletname+ -servlet.xml文件:
+			   目的初始化处理器映射器，处理器适配器，初始化IOC容器，
+			   但配置文件一般初始化DispatcherServlet指定初始化配置文件，这样就不会自动到/WEB-INF下找
+			   <servlet>
+					<servlet-name>springMVC</servlet-name>
+					<servlet-class>DispatcherServlet</servlet-class>
+					<init-param>
+						<param-name>contextConfigLocation</param-name>
+						<param-value>classpath:springMVC.xml</param-value>
+					</init-param>
+					<!--服务器在启动的时候就创建该servlet-->
+					<load-on-startup>1</load-on-startup>
+				</servlet>
+				<servlet-mapping>
+					<servlet-name>springMVC</servlet-name>
+					<!--
+					url-pattern:
+						/:代表所有请求		支持restful,但访问不到静态资源文件，
+											因为DispatcherServlet将这种请求会找对应controller
+											解决这个问题需要在配置文件中加上访问静态资源文件配置
+						/*:默认查找jsp文件
+						
+						*.do				不支持restful，可以访问静态资源文件
+						*.action
+					-->
+					<url-pattern>/</url-pattern>
+				</servlet-mapping>
+				
+				解决乱码:spring已完成过滤器
+				 <
+			2、配置applicationContext.xml
+				<!-- 第1步：扫描Controller -->
+				<context:component-scan base-package="com.bjpowernode.ssm.spring.controller" />
+				
+				<!-- 第2步：打开注解驱动,配置处理器映射器和处理器适配器，未配置json -->
+				<mvc:annotation-driven />
+				<!--2、打开注解驱动,配置处理器映射器和处理器适配器,并配置json解析器 -->
+					<mvc:annotation-driven>
+						<mvc:message-converters register-defaults="true">
+							<!--json解析器-->
+							<bean id="mappingJacksonHttpMessageConverter"
+								  class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+								<!--class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">-->
+								<property name="supportedMediaTypes">
+									<list>
+										<value>text/html;charset=UTF-8</value>
+										<value>application/json</value>
+										<value>application/xml;charset=UTF-8</value>
+									</list>
+								</property>
+							</bean>
+						</mvc:message-converters>
+					</mvc:annotation-driven>
+				<!-- 第3步：视图解析器
+					转发、重定向
+					prefix:指定到默认的跳转目录	/WEB-INF/jsp/:逻辑视图名
+					suffix:跳转视图文件的后缀名
+					hello  /WEB-INF/jsp/+hello+.jsp
+				 -->
+				<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+					<property name="prefix" value="/WEB-INF/jsp/"/>
+					<property name="suffix" value=".jsp"/>
+				</bean>
+				<!--访问静态资源配置：三种方式
+				 在springMVC.xml配置:
+					方法 1、<mvc:default-servlet-handler />
+					方法 2、<mvc:resources mapping="/images/**" location="/images/" />
+					 方法3、在web.xml配置默认的selvet
+					 <servlet-mapping>
+						<servlet-name>default</servlet-name>
+						<url-pattern>*.jpg</url-pattern>
+					</servlet-mapping>
+					<servlet-mapping>
+						<servlet-name>default</servlet-name>
+						<url-pattern>*.js</url-pattern>
+					</servlet-mapping>
+					<servlet-mapping>
+						<servlet-name>default</servlet-name>
+						<url-pattern>*.css</url-pattern>
+					</servlet-mapping>
+				-->
+				<mvc:default-servlet-handler/>
+				<!--文件上传解析器-->
+				<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+					<property name="defaultEncoding" value="UTF-8"/>
+				</bean>
+				
+	3、返回值类型
+		1、void：没有返回值
+			通常用于异步请求
+			response.getWriter().print("你好!!!");
+		2、String：
+			转发数据怎么带?
+				还是通过HttpServletRequest.setAttribute();
+			转发：服务器内部行为，客户端请求了一次，地址栏只改变了一次，可以携带数据
+			
+				
+				根据视图解析器的配置，默认转发,可以拼接相对路径
+				前缀（WEB-INF/jsp/）+视图名+后缀(.jsp)
+					return "../../index";
+					return "user";
+				转发到controller
+					return "forward:user/method1";
+			重定向：客户端行为，请求了两次，地址栏发生了两次改变，不能携带数据
+				页面的重定向：
+					1、不能重定向到WEB-INF目录，因为WEB-INF受保护
+					2、重定向到web目录
+						return "redirect:/视图名.扩展名";
+				controller重定向
+					return "redirect:相对路径";
+		3、ModelAndView
+			模块和视图，即可以跳转视图又可以携带数据
+			ModelAndView modelAndView = new ModelAndView();
+			//设置的跳转视图
+			modelAndView.setViewName("login");
+			//设置数据
+			modelAndView.addObject("username","张无忌");
+			modelAndView.addObject("password","4444");
+		4、Object	
+			1、传统方式通过fastjson转为字符串返给客户端
+				fastjson:
+					对象转json:JSON.toJSONString()
+					json转对象:JSON.parseObject()
+					json转数组:JSON.parseArray();
+			
+			2、springmvc实现了服务器和客户端json交互，
+				框架自动将对象转为json串返给客户端，以及客户端发送的json封装到对象中
+				实现：
+					1、导入fastjson
+					2、往springmvc.xml配置json解析器
+					3、使用注解@RequestBody,可以将客户端发的json封装到方法参数的对象中
+					4、使用注解@ResponseBody:
+						该注解可以放在 方法上/类上，标记该方法/该类中所有的方法都返回json对象形式
+						@ResponseBody和@Controller合并：@RestController:该类中所有的方法都返回json对象形式
+						适合前后端分离，前后端都是用json交互
+						客户端设置的请求方式为：application/json，表示以json的方式请求
+	4、方法参数类型和参数绑定
+		1、内置类型
+			方法参数直接获取:HttpServletRequest，HttpServletRespont,HttpSession,Model,ModelMap
+			model.setAttribute(key,value);
+			可以设置值，直接转发
+		2、基本类型
+			方法参数直接接收客户端发送请求当中的数据，key保持一致即可，框架自动转换数据类型
+			方法参数什么时候为null，什么时候空字符串
+				key不一致，这时方法参数为null
+				key一致，客户端未赋值，这时为空字符串
+			key不一致时使用@RequestParam("客户端key")，参数纠正
+		3、数组类型
+			springmvc可以直接接取数组
+			或
+			String [] keys=request.getParamterValues(key);
+		4、pojo
+			客户端传多个数据可以直接用对象接，要求客户端的key和对象属性名一致
+	5、常用注解：
+		1、@RequestMapping(value={"请求的uri",..},methid=请求方式)
+			@GetMapping	@PostMapping
+			指定方法或类中方法的请求url和请求方式
+		2、@RequestParam(value="纠正参数",defaultValue="默认值")
+		3、@RestController:controller和ResponstBody的结合，表示该类被ioc管理并且所有方法的返回对象类型
+		4、@ResponseBody:方法或类返回对象类型，框架通过json解析器将对象转json返给客户端
+		5、@RequestBody:方法或类接收参数对象类型，框架通过json解析器将json转对象给方法形参赋值
+		6、@PathVariable:restful风格的url中获取值
+			传统请求：http://IP:port/项目名/servletURI?k=v&k=v
+			restful风格: http://IP:port/项目名/servletURI/v/v/v
+			后台怎么接？
+				@RequestMapping("servletURI/{k1}/{k2}/{k3}")
+				public String method1(@PathVariable("k1")String k,@PathVariable("k2")String k,@PathVariable("k3")String k)
+				注意url中的{k}相当于占位符，k必须与@PathVariable("k")的k保持一致
+			使用场景：因WEB-INF受保护不能直接让客户端访问到，可以专门用来视图跳转
+	6、文件上传：
+		xml配置文件上传解析器
+		后台思路：
+			1、文件存放目录是否创建
+			2、文件的格式限制：类型、大小、文件名...
+			3、多久上传一次给影像系统...
+		spring提供了 MultipartFile 类，框架已封装好了，直接使用即可
+		public void upload(MultipartFile file){
+			file.getOriginalFileName();//获取上传的文件名称
+			file.transforTo(new File(磁盘路径+File.sepatator+filename));
+		}
+		上传多个文件，用数组
