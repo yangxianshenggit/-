@@ -1,0 +1,8 @@
+githup:
+	项目托管
+1、国内通过https的方式进行push或clone容易失败，可以通过SSH的方式进行
+2、idea集成githup登录时可以通过token进行
+3、项目的push失败
+	Warning: Permanently added‘github.com’ (RSA) to the list of known hosts
+	可以百度https://blog.csdn.net/xywxhzsjhh/article/details/115142036
+4、idea操作git，通过idea

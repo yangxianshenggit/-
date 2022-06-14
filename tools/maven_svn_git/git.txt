@@ -40,3 +40,6 @@ git操作：
 		切换到master，然后合并分支	git merge 分支名称
 		
 		!!!注意：当在分支上进行重置，合并主分支后，主分支上也会进行重置操作
+		
+		
+		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
