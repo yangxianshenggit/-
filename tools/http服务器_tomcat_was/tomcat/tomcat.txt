@@ -134,12 +134,12 @@ tomcat
 
 13、参数
 	请求参数获取：request中都有	request.getParameter("name");
-			或者直接获取全部参数的集合 Map<String,String[]>map=request.getParamterMap();
+			或者直接获取全部参数的集合 Map<String,String[]>map=request.getParameterMap();
 	响应参数：response.getWriter().writer();
 	
 14、servlet默认单例模式，非线程安全的
 	线程安全问题：多个线程争抢同一个资源
-	解决方法：加锁，同步方法，同步代码块	synchronizated、Lock
+	解决方法：加锁，同步方法，同步代码块	synchronized、Lock
 	
 	servlet默认是单例模式
 	单例模式：节省空间，会出现线程安全问题
@@ -196,7 +196,7 @@ tomcat
 			5、转发两次跳转之间传输的数据不会丢失（request不调用removeAttribute）,
 				所以可以通过request进行数据的传递，指的是request域
 			6、转发只能将请求转发给同一个WEB应用中的组件
-				如果创建RequsetDispatcher对象时指定的相对URL以"/"开头，他是想对当前WEB应用程序的根目录
+				如果创建RequestDispatcher对象时指定的相对URL以"/"开头，他是想对当前WEB应用程序的根目录
 			//转发前设置值
 			request.setAttribute("username",name);
 			//转发到其他WEB组件
@@ -226,7 +226,7 @@ tomcat
 			会话：当前连接开始通信到通信结束
 			当前会话：浏览器访问服务器成功，到服务器给客户端响应数据，当关闭浏览器的时候，会话结束
 		2、为什么使用会话？
-			因为每次请求的数据都是不一样的，如果不适用绘画技术导致每次请求的数据就会丢失
+			因为每次请求的数据都是不一样的，如果不适用会话技术导致每次请求的数据就会丢失
 		3、会话技术分类
 			cookie：客户端技术
 			session：服务端技术	占用服务器内存
@@ -257,7 +257,7 @@ tomcat
 			//设置存活时间
 			cookie.setMaxAge(3600);//单位秒
 			//将cookie回写给客户端
-			 response.addCookie(pscookie);
+			 response.addCookie(cookie);
 	
 	5、session：服务端技术 存储在服务器，占用服务器端内存
 		1、session原理：

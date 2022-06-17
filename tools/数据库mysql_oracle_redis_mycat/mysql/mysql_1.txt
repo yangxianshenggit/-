@@ -11,6 +11,7 @@ mysql
 			列名（字段名）：字段名称、字段数据类型、字段约束、字段长度
 			行（记录）
 			主键；每条记录的唯一标识
+			约束、索引
 	3、SQL概述
 		全称叫做结构化查询语言
 		
@@ -20,7 +21,7 @@ mysql
 	1、重启mysql:service mysql restart
 	2、登录mysql客户端:mysql -h IP -P 端口 -p 数据库名称 -u 用户
 	3、mysql版本：mysql -V	or mysql --version
-	4、注意linux安装完毕的mysql一定要配置字符编码集，否则插入中文报错。
+	4、注意linux安装完毕的mysql一定要配置字符编码集，否则插入中文报错。支持表名大小写不敏感
 			在mysql的安装目录的my.cof或/etc/my.cof中加入
 				[mysqld]
 		　　　　character-set-server=utf8 
@@ -44,7 +45,7 @@ mysql
 			切换数据库: use 数据库名称;
 			创建数据库：create database 数据库名称;
 				注意编码:若安装时配置过utf-8则不用管，若不是则需输入命令
-				CREATE DATABASE IF NOT EXISTS 数据库名称 DEFAULT CHARSET utf8;
+				create database if not exists 数据库名称 default charset utf8;
 			mysql配置文件：my.cof
 			查询当前使用的数据库：select database();
 			查询使用的字符编码：show create database 数据库名称;
@@ -112,9 +113,9 @@ mysql
 	3、操作表
 		建表语句
 			create table 数据库名称.表名称(
-			   columnName dataType(length),
+			   columnName dataType(length) 约束,
 			   ...
-			   columnName dataType(length)
+			   columnName dataType(length) 约束
 			);
 		删除表
 			drop table 表名...;
@@ -229,7 +230,7 @@ mysql
 			当字段为null时转换为0，例如sum(sal+ifnull(comm,0))
 			
 		注意：wehere语句中不能使用聚合函数
-		 因为聚集函数要对全列数据时行计算，因而使用它的前提是：结果集已经确定！而where子句还处于“确定”结果集的过程中，因而不能使用聚集函数。
+		 因为聚合函数要对全列数据时行计算，因而使用它的前提是：结果集已经确定！而where子句还处于“确定”结果集的过程中，因而不能使用聚集函数。
 		而having子句中可以使用聚合函数，因为结果集已确定
 	分组查询：去重归类
 		14、group by 字段1，字段2

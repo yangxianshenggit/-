@@ -1,0 +1,23 @@
+springboot特性：
+    能够快速创建基于Spring的应用程序
+    能够直接使用java main方法启动内嵌的Tomcat服务器运行Spring Boot程序，不需要部署war包文件
+    提供约定的starter POM来简化Maven配置，让Maven的配置变得简单
+    自动化配置，根据项目的Maven依赖配置，Spring boot自动配置Spring、Spring mvc等
+    提供了程序的健康检查等功能
+    基本可以完全不使用XML配置文件，采用注解配置
+springboot四大核心：
+    1、自动配置
+        针对很多Spring应用程序和常见的应用功能，Spring Boot能自动提供相关配置
+    2、起步依赖
+        告诉Spring Boot需要什么功能，它就能引入需要的依赖库
+    3、Actuator
+        让你能够深入运行中的Spring Boot应用程序，一探Spring Boot程序的内部信息
+    4、命令行界面
+        这是Spring Boot的可选特性，主要针对Groovy语言使用
+        Groovy是一种基于JVM(Java虚拟机) 的敏捷开发语言，它结合了Python、Ruby和Smalltalk的许多强大的特性，
+        Groovy 代码能够与Java代码很好地结合，也能用于扩展现有代码，由于其运行在JVM上的特性，Groovy可以使用其他Java语言编写的库
+    5、Spring Boot开发版本推荐
+        Spring boot目前分为两大版本系列，1.x系列和2.x系列
+        推荐使用Maven 3.3+，Maven目前最新版本为3.6.0(2019.01)
+        推荐使用Java 8，Spring Boot 1.x系列的版本兼容Java 6，Spring Boot 2.x系列需要至少Java8
+

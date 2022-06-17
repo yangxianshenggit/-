@@ -1,0 +1,2 @@
+localhost为什么能表示本机?
+    在windows下的drivers\etc\hosts文件中指定了127.0.0.1和localhost的映射，linux一样
