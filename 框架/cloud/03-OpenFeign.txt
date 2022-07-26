@@ -1,0 +1,103 @@
+1、openfeign是什么?
+    Feign 是声明性(注解)Web 服务客户端。它使编写 Web 服务客户端更加容易。要使用 Feign， 请创建一个接口并对其进行注解。
+    它具有可插入注解支持，包括 Feign 注解和 JAX-RS 注解。Feign 还支持可插拔编码器和解码器(对参数的处理)。
+    Spring Cloud 添加了对 Spring MVC 注解的支持，并支持使用 HttpMessageConverters，Spring Web 中默认使用的注解。
+    Spring Cloud 集成了Ribbon和Eureka以及 Spring Cloud LoadBalancer，以在使用 Feign 时提供负载平衡 的 http 客户端
+2、能做什么？
+    Feign是一个客户端声明式的远程方法调用组件(RPC远程方法调用)
+    feign集成了ribbon，ribbon中集成了eureka
+3、简单使用
+    1、pom依赖
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+    2、springboot启动类开启Feign功能
+        @EnableFeignClients(basePackages={})
+        指定扫描包
+    3、编写调用服务提供者接口，接口上标明要调用提供者的应用名称
+        @FeignClient(value="provider-application-name",url="http://...",contextId="xxx"，path="xxx")
+        value必填，ribbon会根据value去eureka查找服务提供者集群，
+        url指定访问的路径测试常用，
+        contextId避免面对同一个服务创建bean重名
+        path定义当前FeignClient访问接口时的统一前缀
+    4、接口中编写消费者要调用的方法签名,也就是服务提供者的控制层方法直接拷过来
+        方法签名(一个方法的所有属性)：方法修饰符 返回值 方法名 形参 注解
+4、请求的过程：
+    前端-->消费者 --RPC(feign)--> 提供者
+5、openFeign执行原理：
+    Feign 是声明性(注解)Web 服务客户端，接口是不能直接执行的，feign会给接口jdk动态代理创建代理对象
+    代理：jdk动态代理(基于接口 $Proxy)，只要是代理对象调用方法必须走 invoke (java.lang.reflect.InvocationHandler)
+         cglib代理(基于子类 $$Proxy)
+    1. OpenFeign 它是如何运作的？
+        在主启动类上加上@EnableFeignClients 注解后，启动会进行包扫描，把所有加了 @FeignClient(value=”xxx-service”)
+        注解的接口进行创建代理对象通过代理对象，使用 ribbon 做了负载均衡和远程调用
+    2. 如何创建的代理对象？
+        当项目在启动时，先扫描，然后拿到标记了@FeignClient注解的接口信息，由ReflectiveFeign类的newInstance方法创建了代理对象JDK代理
+    3.OpenFeign到底是用什么做的远程调用？
+        使用的是HttpURLConnection（java.net）
+    4.OpenFeign怎么和ribbon整合的？
+        在代理对象执行调用的时候
+6、请求过程会出现的一些问题：
+    1、rpc调用的请求时间：
+        feign只是封装了远程调用的功能，底层负载均衡和rpc调用还是ribbon，
+        ribbon默认远程调用的是HttpUrlConnection,因此需要修改ribbon的配置
+        feign默认等待时间1s，超时直接报超时
+        ribbon:
+                ReadTimeout: 3000 #给三秒的调用时间 ,默认1s
+                ConnectTimeout: 3000 #给三秒的连接服务的时间
+    2、feign的传参问题
+        Feign 传参确保消费者和提供者的参数列表一致 包括返回值 方法签名要一致
+        1. 通过 URL 传参数，GET 请求，参数列表使用@PathVariable（“”）
+        2. 如果是 GET 请求，每个基本参数必须加@RequestParam（value=“”）
+            一个参数可以不加，默认从 requestBody 中取，若多个参数必须加RequestParam，从RequestParam中取，
+            否则会报 IllegalStateException（非法状态异常） 因为request只能有一个Body
+            RequestParam注解的属性requited默认true参数必传，若要设定为非必传设为false
+        3. 如果是 POST 请求，而且是对象集合等参数，必须加@Requestbody 或者@RequestParam
+    3、默认情况下feign通过jdk动态代理给接口创建对象针对一个ApplicationName只能创建一个bean,
+        也就是说@FeignClient(value="ApplicationName")只能创建一个
+        否则这种情况下启动就会报错了，因为Bean的名称冲突了
+        三个解决方案：
+            1、配置中加
+                spring.main.allow-bean-definition-overriding=true
+                这样允许同名的bean存在，但是不安全，不推荐。（来自网络，未测试）
+            2、在openfeign高版本2.2.1中@FeignClient里面添加了新属性 ContextId，这样使用这个属性也是可以的，官网有这个例程。
+            3、官网提供的另外一种就是手动创建Feign客户端，如下就是
+    4、针对传参是日期类型问题：
+        使用feign直接传参Date，消费者和服务提供者会出现时间偏差(14小时)
+        避免这个问题有以下几种方式：
+        1、传字符串 √√√
+        2、修改feign源码
+        3、将日期放入对象中传参
+        4、不传日期
+        5、jdk8的日期类：LocalDate 年月日 LocalDateTime 会丢失秒
+7、源码分析：
+
+    1、启动包扫描             --->        目的：知道给哪个类创建对象
+       递归扫描              --->        扫描到所有的类
+       判断                 --->        选择是否创建需要创建对象
+       通过beanFactory      --->        创建bean对象放入IOC容器
+    ...
+8、feign调用出现异常解决方案：
+    1、在feign.Client源码中这行代码打断点查看响应码
+        int status = connection.getResponseCode();
+    2、在spring源码org.springframework.http.HttpStatus查看状态码的含义
+        200 成功 400 请求参数错误 401 没有权限 403 权限不够
+        404 路径不匹配 405 方法不允许 500 提供者报错了 302 资源重定向
+9、OpenFeign 的日志功能
+    源码 Feign.level 有日志级别
+            NONE        默认的，不显示日志
+            BASE        仅记录请求方法，URL ，响应状态码及执行时间
+            HEADERS     在 BASE 之上增加了请求和响应头的信息
+            FULL        在 HEADERS 之上增加了请求和响应的正文及无数据
+    设置openfeign的日志
+       1、设置feign的日志级别
+        @Bean
+        Logger.Level feignLogger() {
+             return Logger.Level.FULL;
+        }
+       2、修改配置文件
+        logging:
+            level:
+                # 包名或类名
+                com.bjpowernode.feign.UserOrderFeign: debug

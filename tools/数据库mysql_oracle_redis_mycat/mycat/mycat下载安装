@@ -1,0 +1,6 @@
+1、下载核心jar
+    http://dl.mycat.org.cn/2.0/1.21-release/..
+2、下载应用
+    http://dl.mycat.org.cn/2.0/install-template/
+3、将核心jar放入应用解压后的lib目录即可，随后将解压的文件夹直接复制到linux目录即可
+4、修改文件权限，否则运行启动命令会报权限不足错误

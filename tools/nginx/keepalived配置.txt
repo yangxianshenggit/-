@@ -1,0 +1,37 @@
+global_defs {# 全局配置
+	notification email {
+		acassen@firewall.loc
+		failover@firewall.loc
+		sysadmin@firewall.loc
+	}
+	notification_email_from Alexandre.Cassen@firewall.loc
+	smtp_server 192.168.17.129
+	smtp _connect_timeout 30
+
+	router_id LVS_DEVELBACK #路由id，/etc/host中查看，通过这个名字访问到主机类似localhost
+}
+
+vrrp_script chk_http_port {#脚本配置
+
+	script "/usr/local/src/nginx_check.sh"
+
+	interval 2 #(检测脚本执行的间隔) 
+
+	weight -20 #权重
+
+}
+
+vrrp_instance VI_1 {
+	state BACKUP	#备份服务器上将 MASTER 改为BACKUP 
+	interface ens33 #网卡,ifconfig查看
+	virtual_router_id 51	#主、备机的virtual_routerid必须相同
+	priority 90		#主、备机取不同的优先级，主机值较大，备份机值较小
+	advert_int 1	#心跳机制，1秒检测一次
+	authentication {
+		auth_type pass
+		auth_pass 1111
+	}
+	virtual ipaddress {
+		192.168.17.50 //VRRP H虚拟地址
+	}
+}

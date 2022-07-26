@@ -1,4 +1,6 @@
 springMVC：
+    springmvc基于拦截器开发的，常用的拦截器：登录拦截
+    过滤器：字符编码集过滤
 	基于MVC架构，功能分工明确。解耦合
 	作为Spring框架的一部分，能够使用Spring的IoC,Aop等功能。方便的整合MyBatis,Hiberate,JPA等
 	SpringMVC强化注解的使用，在控制器，Service，Dao都可以使用注解注入对象。方便灵活。

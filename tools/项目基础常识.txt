@@ -21,6 +21,11 @@
 3、web项目获取资源文件
 	//ServletContext代表整个WEB项目，getRealPath可以获取文件的绝对路径
 	request.getServletContext().getRealPath("name.type");
+4、乱码解决：
+    new String(str.getBytes("ISO-8859-1"),"utf-8");
+    str是西欧编码转为utf-8
+    ？代表在字符集中不存在该字符
+5、在线工具：tool.ul
 	
 
 

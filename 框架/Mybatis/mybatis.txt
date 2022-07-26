@@ -66,6 +66,25 @@ Mybatis：
 					基本数据类型：
 						不写也行
 	resultMap:
+	    resultType和resultMap都是mybatis进行数据库连接操作处理返回结果的。
+	    resultType：当使用resultType做SQL语句返回结果类型处理时，对于数据库中的字段在相应的pojo中必须有和它相同的字段对应
+        当数据库中的字段和pojo类中字段不一致时，无法获取该字段的结果
+        resultMap：当使用resultMap做SQL语句返回结果类型处理时，通常需要在mapper.xml中定义resultMap进行pojo和相应表字段的对应。
+           resultMap标签
+            id属性 ，resultMap标签的标识。
+            type属性 ，返回值的全限定类名，或类型别名。
+            autoMapping属性 ，值范围true（默认值）|false, 设置是否启动自动映射功能，自动映射功能就是自动查找与字段名小写同名的属性名，
+            并调用setter方法。而设置为false后，则需要在resultMap内明确注明映射关系才会调用对应的setter方法。
+
+             <resultMap id="queryAll2Map" type="dept" autoMapping="false">
+                 <id property="dept_name" jdbcType="VARCHAR" column="dname"/>
+                 <id property="deptno" jdbcType="BIGINT" column="deptno"/>
+                 <id property="loc" jdbcType="VARCHAR" column="loc"/>
+             </resultMap>
+             <select id="queryAll2" resultMap="queryAll2Map">
+                 select * from dept
+             </select>
+
 	#和$区别
 		相当于preparedStatement和stateStatemnt的区别
 		#底层调用了preparedStatement，实现sql预编译和防止sql注入
@@ -223,3 +242,26 @@ Mybatis：
 				<insert id="addDept" parameterType="com.bjpowernode.mybatis.bean.Dept">
 					insert into DEPT(deptno,dname,loc) values(#{deptno},#{dname},#{loc})
 				</insert>
+mybatis缓存：
+    mybatis 的缓存分为2类，分别是一级缓存和二级缓存
+        一级缓存：
+            一级缓存是默认开启的，它在一个sqlSession会话里面的所有查询操作都会保存到缓存中，
+            一般来说一个请求中的所有增删改查操作都是在同一个sqlSession里面的，所以我们可以认为每个请求都有自己的一级缓存，
+            如果同一个sqlSession会话中2 个查询中间有操作数据的语句，那么之前查询的所有缓存都会清空。
+            因为每次增删改操作都有可能会改变原来的数据，所以必须刷新缓存
+        二级缓存：
+            二级缓存是全局的，也就是说多个请求可以共用一个缓存，二级缓存需要手动开启，
+                1、缓存会先放在一级缓存中，当sqlSession会话提交或者关闭时才会将一级缓存刷新到二级缓存中；
+                2、开启二级缓存后，用户查询时，会先去二级缓存中找，找不到在去一级缓存中找；
+        有2种方式配置二级缓存：
+            百度
+        缓存还有以下几种情况需要注意
+            映射语句文件中的所有 select 语句的结果将会被缓存。
+            映射语句文件中的所有 insert、update 和 delete 语句会刷新缓存。
+            缓存会使用最近最少使用算法（LRU, Least Recently Used）算法来清除不需要的缓存。
+            缓存不会定时进行刷新（也就是说，没有刷新间隔）。
+            缓存会保存列表或对象（无论查询方法返回哪种）的 1024 个引用。
+            缓存会被视为读/写缓存，这意味着获取到的对象并不是共享的，可以安全地被调用者修改，而不干扰其他调用者或线程所做的潜在修改。
+
+
+

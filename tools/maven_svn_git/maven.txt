@@ -10,15 +10,15 @@ maven
 		把jar和本身依赖包都导进来
 	项目构建:maven将项目进行标准化，每个阶段使用一个命令
 			清理-->编译-->测试-->报告-->打包-->部署
-clean：清理、将tarage下的文件全部删除，打包失败必须清理
-validate
-compile：compile 是 maven 工程的编译命令，作用是将 src/main/java 下的文件编译为 class 文件输出到 target目录下。
-test：会运行test/java下所有测试类
-package：打包，将maven打成jar/war放在tarage下
-verify
-install：打包，maven的安装命令，执行将maven打成jar/war发布到本地仓库
-site:生成一些项目报告
-deploy
+    clean：清理、将tarage下的文件全部删除，打包失败必须清理
+    validate
+    compile：compile 是 maven 工程的编译命令，作用是将 src/main/java 下的文件编译为 class 文件输出到 target目录下。
+    test：会运行test/java下所有测试类
+    package：打包，将maven打成jar/war放在tarage下
+    verify
+    install：打包，maven的安装命令，执行将maven打成jar/war发布到本地仓库
+    site:生成一些项目报告
+    deploy
 3、maven核心配置文件：
 	conf/setting.xml
 		1、本地仓库位置(本地仓库)
@@ -83,10 +83,95 @@ deploy
 	
 	将本地仓库导入项目中：通过坐标gav，坐标可以通过maven中央仓库查
 10、依赖的作用域scope
-		范围		编译		测试		运行
+		范围		    编译		   测试		   运行
 		compile		√			√			√			
 		test					√					
 		provided	√			√					
 		runtime					√			√		
 		system		√			√			
-11、maven报一些找不到jar时，可以在pom中引入		
+11、maven报一些找不到jar时，可以在pom中引入
+12、maven聚合工程
+    背景：在分布式开发场景下，一个项目可能出现多个模块，彼此之间相互调用，
+    特别适合和模块的依赖没有完全统一，在集成项目的时候，会带来很多冲突问题
+    多模块：聚合管理就是解决多模块开发中的管理问题
+        表现形式：父子关系
+    1、夫模块创建：不是为了开发，为了管理依赖、插件
+        maven-java/maven-web/springboot
+        打包方式必须是pom
+            <packaging>pom</packaging>
+        删除src目录：防止出现问题
+    2、创建子模块时，指定父模块
+        子pom中会生成<parent>标签，指定父模块信息
+    3、游离模块：创建模块时未指定父模块
+        在pom加入parent标签指向父模块，自动变为子模块
+    4、依赖管理：
+        方式1：
+            父工程中定义的依赖子工程可以直接继承
+            父工程继承的依赖不满足子工程的要求，子工程可以直接进行覆盖(定义新的依赖)
+            弊端：不管子工程需不需要，都会继承。会导致有大量的无用的依赖
+        方式2：推荐
+            父工程中定义依赖管理器，子工程不能直接继承，子工程需要声明式依赖（版本会和父工程的一样）
+            注意：并不是所有的依赖都需要父工程管理，只有公共的依赖需要管理
+            父工程继承的依赖不满足子工程的要求，子工程可以直接进行覆盖(定义新的version)
+            父pom:
+                <!--依赖版本号统一管理，方便修改-->
+                <properties>
+                    <mysql-connector-java-version>5.1.47</mysql-connector-java-version>
+                </properties>
+                <!--依赖管理器-->
+                <dependencyManagement>
+                    <dependencies>
+                        <dependency>
+                            <groupId>mysql</groupId>
+                            <artifactId>mysql-connector-java</artifactId>
+                            <version>${mysql-connector-java-version}</version>
+                        </dependency>
+                    </dependencies>
+                </dependencyManagement>
+            子pom:
+                <!--声明式依赖-->
+                <dependencies>
+                    <dependency>
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                    </dependency>
+                </dependencies>
+    5、插件管理：与依赖管理雷同
+        方式一：推荐
+            父工程中定义好公共的插件，子工程直接继承
+            jdk编译插件...
+        方式二：
+            插件管理器
+                <build>
+                    <!--插件管理-->
+                    <pluginManagement>
+                        <plugins>
+                            <plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-compiler-plugin</artifactId>
+                                <version>3.8.1</version>
+                                <configuration>
+                                    <source>1.8</source>
+                                    <target>1.8</target>
+                                    <encoding>UTF-8</encoding>
+                                </configuration>
+                            </plugin>
+                        </plugins>
+                    </pluginManagement>
+                </build>
+    6、可以把子工程变成父工程，参考父工程的创建
+    7、maven生命周期跳过test场景：
+           整体模块功能未开发完
+           模块中某个功能为开发完毕
+           单个功能更新调试导致其他功能失败
+           快速打包
+       此时为了打包或运行整个项目就需要调过maven生命周期中的test
+       比如我们执行compile，其实不会经过测试的;但是如果执行package或者install的话，其默认是经过测试的；
+       即，如果我们要跳过测试的话，其实就是关闭声明周期中的test这个点而已
+
+       如何关闭test?
+        idea的maven操作界面上的‘蓝色闪电’skip tests 点击就会跳过测试
+    8、当需要引入很多jar包的时候会导致pom.xml过大，我们可以想到的一种解决方案是定义一个父项目，但是父项目只有一个，也有可能导致父项目的pom.xml文件过大。
+    这个时候我们引进来一个type为pom，意味着我们可以将所有的jar包打包成一个pom，然后我们依赖了pom，即可以下载下来所有依赖的jar包
+
+

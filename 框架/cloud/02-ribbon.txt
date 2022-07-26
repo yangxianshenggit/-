@@ -1,0 +1,106 @@
+1、 Ribbon 是客户端实现负载均衡的远程调用组件，用法简单
+    Ribbon 源码核心： ILoadBalancer 接口：起到承上启下的作用
+        1. 承上：从 eureka 拉取服务列表 2. 启下：使用 IRule 算法实现客户端调用的负载均衡
+2、cloud中ribbon通常和restTemplate或OpenFeign连用
+3、RestTemplate:已集成ribbon，默认采用轮询方式
+    restTemplate实现restful风格：get\post\put\delete
+    //直接返回响应结果
+    String forObject = restTemplate.getForObject("http://localhost:8761/eureka", String.class);
+    //返回http的响应所有信息：响应头、响应码、响应体
+    ResponseEntity<String> forEntity = restTemplate.getForEntity("http://localhost:8761/eureka", String.class);
+    //底层用jackson将object转为json
+    String s = restTemplate.postForObject("http://localhost:8761/eureka", new Object(), String.class);
+    //传的是表单参数，必须用LinkedMultiValueMap工具类
+    LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+    map.add(k,v);
+    ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity("http://localhost:8761/eureka", map, String.class);
+4、post方式传参两种：json/表单
+        json传参核心：header content-type=application/json;charset=utf-8
+        form表单核心：header content-type=application/x-www-form-urlencoded
+    接json对象@RequestBody,接表单直接对象接
+5、 ribbon主要功能：提供客户端负载均衡算法和服务调用
+6、负载均衡：Load Balance(LB)
+    lb://   负载均衡协议：将负载（工作任务）进行平衡、分摊到多个操作单元上进行运行，从而协同完成工作任务，从而达到HA（高可用）
+   负载均衡物理上分为：硬负载（F5）和软负载（nginx、LVS）
+   nginx是集中式LB，消费方和服务器方之间的负载均衡，客户端所有请求都会交给nginx，然后由nginx转发请求给服务方。
+   ribbon是本地负载均衡，属于进程内LB，将LB逻辑集中在消费方，消费方从服务注册中心获知有哪些地址可用，然后在从这些地址中选择一个合适的服务器
+7、ribbon配合RestTemplate使用：
+ribbon默认轮询算法的使用：
+    1、RestTemplate的配置上开启ribbon的负载均衡功能，此时restTemplate已被ribbon托管，不能通过直接通过ip、port请求了；
+        若要使用原生的RestTemplate必须new一个新的即可
+        @LoadBalanced
+    2、先通过 "http://" + serviceId + "/info" 我们思考 ribbon 在真正调用之前需要做什么？
+        restTemplate.getForObject(“http://provider/info”, String.class); 想要把上面这个请求执行成功，我们需要以下几步
+         1. 拦截该请求； 2. 获取该请求的 URL 地址:http://provider/info 3. 截取 URL 地址中的 provider
+         4. 从服务列表中找到 key 为 provider 的服务实例的集合(服务发现) 5. 根据负载均衡算法选出一个符合的实例
+         6. 拿到该实例的 host 和 port，重构原来 URL 中的 provider
+         7. 真正的发送 restTemplate.getForObject(“http://ip:port/info”，String.class)
+    3、注意：启动微服务模块最好先启动服务提供者，在启动服务消费者；因消费者的restTemplate启动时创建，回到eureka拉去服务列表，此时服务提供者还没注册
+        这时访问会报错，直到下次拉取服务列表时提供者已注册；或等一会在访问
+    4、 轮询算法的理解：
+        1、必须知道实例信息、请求次数
+        2、请求次数%实例数量
+            被除数%除数  取模，取余好处时一个周期函数 结果总小于除数
+        3、请求次数必然在全局有一个实例变量int i=...,随后进行++i/i++操作，但i++非线程安全
+            加锁，效率低；引入CAS自旋锁，没有线程等待和唤醒的开销
+            cas 优点 性能好 java层面无锁状态 但在jvm层面有锁cmpxchg指令     缺点：若长时间没有拿到导致短暂时间内 CPU飙升 ，还有ABA问题
+在 ribbon 负载均衡算法有哪些？
+    ribbon中有一个核心的负载均衡算法接口 IRule
+        轮训、随机、权重、iphash
+        轮训：区域内亲和轮训、响应时间最短轮训、并发最小轮训、过滤出符合条件的轮训
+        1.RoundRobinRule--轮询 请求次数 % 机器数量
+        2.RandomRule--随机
+        3.权重
+        4. iphash
+        3.AvailabilityFilteringRule--会先过滤掉由于多次访问故障处于断路器跳闸状态的服务，还有并发的连接数量超过阈值的服务，
+        然后对于剩余的服务列表按照轮询的策略进行访问
+        4.WeightedResponseTimeRule--根据平均响应时间计算所有服务的权重，响应时间越快服 务权重越大被选中的概率越大。
+        刚启动时如果同统计信息不足，则使用轮询的策略，等统计信 息足够会切换到自身规则
+        5.RetryRule-- 先按照轮询的策略获取服务，如果获取服务失败则在指定的时间内会进行重 试，获取可用的服务
+        6.BestAvailableRule --会先过滤掉由于多次访问故障而处于断路器跳闸状态的服务，然后 选择一个并发量小的服务
+        7.ZoneAvoidanceRule -- 默认规则，复合判断 Server 所在区域的性能和 Server 的可用 行选择服务器。
+
+    Ribbon 默认使用哪一个负载均衡算法： ZoneAvoidanceRule ：区间内亲和轮询的算法！通过一个 key 来区分
+8、负载均衡和远程调用说明
+
+    场景1：访问不同的服务可以使用不同的负载均衡算法规则
+        yml:
+        #访问不同的服务使用不同的负载均衡算法
+        RIBBON-PROVIDER: # eureka中的ApplicationId
+          ribbon:
+            NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule # ribbon中负载均衡算法的全限定类名（IRule的实现类）
+    场景2：全局改动负载均衡算法
+        在springboot启动类的同级目录及其子目录下配置IRule
+        @Bean
+        public IRule myRule(){
+            return new RandomRule();//IRule的实现类
+        }
+    场景3：ribbon的负载均衡算法都不满足需求，自定义负载均衡，创建一个类实现IRule接口自行定义，然后根据需求配置场景2或1
+
+9、ribbon有很多默认的配置，查看 DefaultClientConfigImpl,ribbon配置在消费者端
+    ribbon: #全局的设置
+        eager-load:
+            enabled: false # false:ribbon一启动不会主动去拉取服务列表，当实际使用时才去拉取,懒加载
+        http:
+            client:
+                enabled: false # 在 ribbon 最后要发起 Http 的调用，我们认为是 RestTemplate 完成的，其实最后是 HttpURLConnection 来完成的，
+                这里面设置为 true ， 可以把 HttpUrlConnection->HttpClient
+            okhttp:
+                enabled: false #HttpUrlConnection 来完成的，这里面设置为 true ，可以 把 HttpUrlConnection->OkHttpClient(也是发 http 请求的，它在移动端的开发用的多)
+        ReadTimeout: 3000 #给三秒的调用时间 ,openFeign默认1s
+        ConnectTimeout: 3000 #给三秒的连接服务的时间
+    provider: #提供者的服务名称,那么访问该服务的时候就会按照自定义的负载均衡算法
+        ribbon:
+            NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule #修改默认负载均衡算法，几种算法的全限定类名
+            # NFLoadBalancerClassName: #loadBalance 策略
+            # NFLoadBalancerPingClassName: #ping 机制策略
+            # NIWSServerListClassName: #服务列表策略
+            # NIWSServerListFilterClassName: #服务列表过滤策略
+            ZonePreferenceServerListFilter 默认是优先过滤非一个区的服务列表
+
+
+
+
+
+
+

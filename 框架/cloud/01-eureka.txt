@@ -1,0 +1,163 @@
+1、Eureka是一个AP原则的服务注册与发现的组件
+2、Eureka是CS架构
+3、入门级别：Eureka的Server
+    pom依赖(不同版本的cloud对应EurekaServer的gav不同)
+        <!-- eureka 注册中心的服务端-->
+        <dependency>
+           <groupId>org.springframework.cloud</groupId>
+           <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+        </dependency>
+    boot配置文件：
+        server默认端口8761，spring.application.name设定的应用名称为注册的ID
+    boot启动类：开启eureka的注册中心功能
+        @EnableEurekaServer
+    访问注册中心图形化页面
+        浏览器输入ip:port
+        DS Replicas:集群列表信息
+            ip/域名/主机名
+        Instances currently registered with Eureka:当前在eureka里面注册那些实例（真实的服务）
+            Application:应用名       AMIs	    Availability Zones	    Status:状态：up\down\un know  实例ID
+            005-EUREKA-SERVER-7001	n/a (1)	    (1)	                    UP (1) - USER-20220225BW:005-eureka-server-7001:8761
+            一个应用可以有多个实例，每个实例ID不能重复，实例ID组成：主机名:应用名称:端口
+            UP:服务是上线的，括号里面是具体服务实例的个数，提供服务的最小单元
+            DOWN:服务是下线的
+            UN_KONW:服务的状态未知
+4、入门级别：Eureka的Client
+    pom依赖(不同版本的cloud对应EurekaClient的gav不同)
+        <!-- eureka 注册中心的客户端-->
+        <dependency>
+           <groupId>org.springframework.cloud</groupId>
+           <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+        </dependency>
+    boot配置文件：
+            client没有端口要求，spring.application.name设定的应用名称为注册的ID
+            注册的含义是什么？就是讲自己的一些信息（什么信息）发送过去（发到哪里）
+                将服务的IP、端口、应用名发送到服务端
+            eureka:
+                client:
+                    service-url: #指定注册地址
+                        defaultZone: http://localhost:8761/eureka
+    boot启动类：开启eureka的客户端功能
+        @EnableEurekaClient
+5、注册中心考虑问题：
+    1、在注册中心需要一个服务列表
+    2、应用下线或挂了，服务列表怎么维护：主动下线怎么处理、被动下线怎么处理：注册中心将服务剔除
+    3、如果一段时间内大量的应用都不联系，该怎么办？
+        eureka-server不会剔除任何一个服务，宁可放过一万，不肯错杀一个
+   客户端考虑的问题：
+    1、维护和注册中心的联系：建立心跳机制
+    2、每次获取调用服务提供者的url都去请求EurekaServer麻烦，缓存服务列表到本地，缓存到本地的服务列表，脏读怎么办？
+
+6、eureka的配置分为三部分：
+    server、client、instance
+  单机版：
+    服务端:即是服务端又是客户端，可以自己注册自己
+        eureka:
+          server:
+            eviction-interval-timer-in-ms: 10000 #服务端间隔多少毫秒定期删除的操作
+            renewal-percent-threshold: 0.85 #续约百分比阈值：客户端在一段时间之内有超过0.85的服务没续约，eurekaServer会保护服务，不会提出任何一个
+          instance: #实例配置,主要是在可视化界面查看方便
+            hostname: localhost #设置ip/主机名称
+            instance-id: ${eureka.instance.hostname}:${spring.application.name}:${server.port}
+            # 默认电脑名称:应用名称:端口，修改后实例ID在eurekaServer的可视化界面显示ip/主机名称:应用名称:端口
+            prefer-ip-address: true #光标放在实例ID上浏览器左下角以ip形式显示具体的服务信息
+            lease-renewal-interval-in-seconds: 5 # 表示 eureka client 发送心跳给 server 端的频率（服务实例续约的时间间隔）
+            lease-expiration-duration-in-seconds: 20 #表示 eureka server 至上一次收到 client 的心跳之后，等待下一次心跳的超时时 间，在这个时间内若没收到下一次心跳，则将移除该实例
+    客户端：
+        eureka:
+          client:
+            service-url: #指定注册地址
+              defaultZone: http://localhost:8761/eureka
+            register-with-eureka: true #是否向eurekaServer注册自己，默认就自己注册自己
+            fetch-registry: true #是否拉去服务列表到本地，默认true
+            registry-fetch-interval-seconds: 10 # wile环节服务列表的脏读问题，时间越短脏读越少，但性能消耗大，默认30
+          instance:
+            hostname: localhost #应用主机名/ip
+            instance-id: ${eureka.instance.hostname}:${spring.application.name}:${server.port}
+            prefer-ip-address: true #显示ip
+            lease-renewal-interval-in-seconds: 10 #续约时间
+
+7、常见的集群方案：
+    中心化集群：nginx带3个tomcat，nginx挂了3个tomcat也访问不了了
+    主从模式集群：redis的一主两从，主挂了就不能写了
+    去中心化模式：更加高可用，没有主从概念，eureka收到数据后会将数据进行广播和扩散
+
+    因为eurekaServer可以自己注册自己，可以运用这一点让eurekaServer之间 相互注册相互守望,然后获取服务列表,数据会同步和扩散
+    真正的集群是部署在不同电脑上，因只有一台电脑。因此调用在hosts文件配置ip和域名映射
+    两个方案：1、eurekaServer两两注册，但是三个服务的port、defaultZone、hostname各不相同
+            2、下面的最终方案
+最终方案EurekaServer的配置方案：只需改端口
+    server:
+      port: 8761 #eureka-server默认端口
+    spring:
+      application:
+        name: eureka-server
+    eureka:
+      client:
+        service-url: #相互注册相互守望，注册之后获取服务列表
+          defaultZone: http://peer1:8761/eureka,http://peer2:8762/eureka,http://peer3:8763/eureka
+      server:
+        eviction-interval-timer-in-ms: 10000 #服务端间隔多少毫秒定期删除的操作，默认60秒
+        renewal-percent-threshold: 0.85 #续约百分比阈值：客户端在一段时间之内有超过0.85的服务没续约，eurekaServer会保护服务，不会剔除任何一个
+      instance: #实例配置
+        # hostname: peer1 #设置ip/主机名称
+        instance-id: ${spring.application.name}:${server.port} # 默认电脑名称:应用名称:端口，修改后实例ID在eurekaserver的可视化界面显示
+        prefer-ip-address: true #光标放在实例ID上浏览器左下角以ip形式显示具体的服务信息
+        lease-renewal-interval-in-seconds: 5 # 表示 eureka client 发送心跳给 server 端的频率（服务实例续约的时间间隔）
+                                             #lease：租约、出租   renewal：恢复、续约、更新   interval：间隔、间隙
+        lease-expiration-duration-in-seconds: 20 #表示 eureka server 至上一次收到 client 的心跳之后，等待下一次心跳的超时时 间，在这个时间内若没收到下一次心跳，则将移除该实例
+                                                # expiration：到期、结束  duration:持续时间，持续
+最终的EurekaClient的配置方案：只改端口
+    eureka:
+        client:
+          service-url: #指定注册地址
+            defaultZone: http://peer1:8761/eureka,http://peer2:8762/eureka,http://peer3:8763/eureka
+          register-with-eureka: true #是否向eurekaServer注册自己，默认就自己注册自己
+          fetch-registry: true #是否拉去服务列表到本地，默认true
+          registry-fetch-interval-seconds: 10 # 拉取服务列表的时间间隔 wile环节服务列表的脏读问题，时间越短脏读越少，但性能消耗大，默认30
+        instance:
+          #hostname: localhost #应用主机名/ip
+          instance-id: ${spring.application.name}:${server.port}
+          prefer-ip-address: true #显示ip
+          lease-renewal-interval-in-seconds: 10 #续约时间,每次发起心跳的时间间隔
+          lease-expiration-duration-in-seconds: 20  #租约到期持续时间 以秒为单位 持续 20s 未发送心跳，就会被 Eureka Server 认为宕机
+8、集群扩展：*********
+    分布式数据一致性协议 Paxos raft:选举的算法/协议
+        http://thesecretlivesofdata.com/raft/
+    zk 是 Paxos
+    eureka 没有分布式数据一致性的机制 节点都是相同的
+    nacos raft
+    在有主从模式的集群中 一般都要遵循这样的协议 才可以稳定对外提供服务
+    数据同步步骤：
+         1、主收到某个数据变化
+         2、主通知从这个数据要变化了，你们准备好了没有
+         3、大部分从节点回复做好准备了，主的数据改变
+         4、主通知从可以变化了，此时数据同步
+    节点有三个状态：跟随者、候选人、领导者
+    主选举步骤：
+        。。。。
+9、Eureka概念：
+    1 服务的注册 当项目启动时（eureka 的客户端），就会向 eureka-server 发送自己的元数据（原始数据）
+     （运行的 ip，端口 port，健康的状态监控等，因为使用的是 http/ResuFul 请求风格）， eureka-server
+      会在自己内部保留这些元数据(内存中)。（有一个服务列表）（restful 风 格，以 http 动词的请求方式，完成对 url 资源的操作）
+    2 服务的续约 项目启动成功了，除了向 eureka-server 注册自己成功，还会定时的向 eureka-server 汇 报自己
+    心跳，表示自己还活着。（修改一个时间）
+    3 服务的下线（主动下线） 当项目关闭时，会给 eureka-server 报告，说明自己要下机了。
+    4 服务的剔除（被动下线，主动剔除） 当项目超过了指定时间没有向 eureka-server 汇报自己，那么
+      eureka-server 就会认为此 节点死掉了，会把它剔除掉，也不会放流量和请求到此节点了。
+10、Eureka源码分析：目的：优化代码排查bug
+    1、Eureka 运作原理的特点
+        Eureka-server 对外提供的是 restful 风格的服务
+        以 http 动词的形式对 url 资源进行操作 get查 post加 put改 delete删
+            http 服务 + 特定的请求方式 + 特定的 url 地址
+        只要利用这些 restful 我们就能对项目实现注册和发现
+        只不过，eureka 已经帮我们使用 java 语言写了 client，让我们的项目只要依赖 client 就 能实现注册和发现！
+        只要你会发起 Http 请求，那你就有可能自己实现服务的注册和发现。不管你是什么语言！
+    2、注册、续约、下线、剔除源码分析
+11、服务发现：
+        通过服务的应用名称找到服务的具体实例的过程
+        springCloud集成了DiscoveryClient，直接注入使用，可以通过应用名获取实例
+        List<ServiceInstance>list=discoveryClient.getInstances(String ApplicationName);
+
+
+

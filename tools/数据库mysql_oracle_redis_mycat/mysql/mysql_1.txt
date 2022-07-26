@@ -10,7 +10,7 @@ mysql
 		表中有几个概念：
 			列名（字段名）：字段名称、字段数据类型、字段约束、字段长度
 			行（记录）
-			主键；每条记录的唯一标识
+			主键：每条记录的唯一标识
 			约束、索引
 	3、SQL概述
 		全称叫做结构化查询语言
@@ -126,13 +126,13 @@ mysql
 		查看建表语句
 			show create table 表名;
 	4、表结构修改
-		添加字段
-		alter table 表名 add columnName dataType(length);
-		修改字段
-		alter table 表名 modify columnName	dataType(length);
+		添加字段添加注释
+		alter table 表名 add columnName dataType(length) comment ‘’;
+		修改字段并添加注释
+		alter table 表名 modify columnName	dataType(length) comment ‘’;
 		删除字段
 		alter table 表名 drop columnName;
-		
+
 	5、表数据添加、修改、删除
 		添加数据
 		insert into 表名(字段...) values(值...);
@@ -141,6 +141,11 @@ mysql
 			2、插入系统时间now()代表当前系统时间
 			3、STR_TO_DATE(str,format)字符串转日期函数：str表示日期字符串符合当前表内数据格式，format表示日期格式
 				str_to_date('2022-05-31','%Y-%m-%d');
+		    4、日期加减运算函数：interval：间隔
+		        date_add(时间字段/字符串,interval num Type):在时间字段上/字符串上加num单位的时间
+		        例如：date_add('1997-11-01',interval 30 year):在字符串上加30年的时间
+		        date_sub(时间字段/字符串,interval num Type):在时间字段上/字符串上减num单位的时间
+		        date_format(时间字段/字符串,type):格式化日期
 		修改数据
 		update 表名 set 字段=值,.. where ...
 		
@@ -149,11 +154,13 @@ mysql
 		
 		表复制:只会复制字段和记录，不会复制约束
 		create table 新建表 as select 字段.. from 复制表;
-		
+
+		添加索引：
+
 四、表约束
 	目的：保证数据的合法性
 	1、主键约束： primary key
-		特点：不能为空(null),不能重复
+		特点：不能为空(null),不能重复,有的引擎会把主键自动创建索引，复合主键会将第一个字段设为索引
 		分类：
 			单一主键：
 				自然主键：单纯为了区分记录的不同;例如主键自增auto_increment,插入语句可以不写自增主键，自增只能用于整数类型
@@ -229,7 +236,7 @@ mysql
 			当某个字段有值为null时做聚合函数运算则使用ifnull(字段,0)
 			当字段为null时转换为0，例如sum(sal+ifnull(comm,0))
 			
-		注意：wehere语句中不能使用聚合函数
+		注意：where语句中不能使用聚合函数
 		 因为聚合函数要对全列数据时行计算，因而使用它的前提是：结果集已经确定！而where子句还处于“确定”结果集的过程中，因而不能使用聚集函数。
 		而having子句中可以使用聚合函数，因为结果集已确定
 	分组查询：去重归类

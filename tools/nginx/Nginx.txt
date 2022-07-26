@@ -14,18 +14,19 @@ Nginx:
 	3、如何实现动静分离
 	4、高可用集群
 
+    nginx的执行原理
+
 基本概念:
 	1、什么是Nginx？能做什么？
-	Nginx (engine x) 是一个高性能的HTTP和反向代理web服务器，同时也提供了IMAP/POP3/SMTP服务。
-	Nginx (engine x) 是一款轻量级的Web 服务器/反向代理服务器及电子邮件（IMAP/POP3）代理服务器，在BSD-like 协议下发行。其特点是占有内存少，并发能力强，事实上nginx的并发能力在同类型的网页服务器中表现较好。
+	Nginx (engine x) 是一款高性能的HTTP和反向代理的Web 服务器及电子邮件（IMAP/POP3）代理服务器，
+	    在BSD-like 协议下发行。其特点是占有内存少，并发能力强，事实上nginx的并发能力在同类型的网页服务器中表现较好。
 	Nginx专为性能优化而开发，实现上非常注重效率，能经受高负载的考验，有报告表明能支持高达50000个并发连接数
-	
 	支持热部署（不停服务的情况下进行软件升级）
 	2、正向代理、反向代理
 	正向代理：如果把局域网外的Internet想象成一个巨大的资源库，则局域网中的客户端要访问Internet，则需要通过代理服务器来访问。
 	客户通过客户端（浏览器/应用）配置代理服务器，通过代理服务器进行互联网访问
 	
-	反向代理：其实客户端对代理是无感知的，因为客户端不需要任何配置就可以访问，只需要将请求发送到反向代理服务器，
+	反向代理：客户端对代理服务器是无感知的，因为客户端不需要任何配置就可以访问，只需要将请求发送到反向代理服务器，
 	由反向代理服务器去选择目标服务器获取数据后，在返回给客户端，此时反向代理服务器和目标服务器对外就是一个服务器，暴露的
 	是代理服务器的地址，隐藏了真实服务器的IP地址
 	
@@ -35,11 +36,13 @@ Nginx:
 	
 	4、动静分离
 	为了加快网站的解析速度，可以把动态页面和静态页面由不同的服务器来解析，加快解析速度，降低原来单个服务器的压力
-	
+	处理请求静态资源时，服务器一般就直接读出资源的内容，再返回给客户端浏览器。
+	动静分离并不是简单的将静态页面和动态页面分别部署在不同服务器，nginx是将请求分为动态请求和静态请求
+
 Linux安装Nginx
 	1、官网下载：https://nginx.org 下载安装包
 	2、安装前需要安装相关的依赖
-		参考截图素材
+		参考截图 素材.png
 		（1）用root安装pcre
 		 wget http://downloads.sourceforge.net/project/pcre/pcre/8.37/pcre-8.37.tar.gz
 		 解压后进入目录，执行 ./configure
@@ -50,7 +53,7 @@ Linux安装Nginx
 		yum -y install make zlib zlib-devel gcc-c++ libtool openssl openssl-devel
 		（3）安装nginx
 		解压--》./configure (检查)--》make && make install(编译并安装)
-		安装完成后，在usr/local/下有nginx，在sbin下有启动脚本
+		安装完成后，在usr/local/下新增nginx文件夹，在sbin下有nginx命令
 		
 启动nginx
 	/usr/local/nginx/sbin/nginx
@@ -78,6 +81,9 @@ Linux安装Nginx
 		./nginx -s -stop
 	重新加载nginx.conf
 		./nginx -s reload
+	检查配置文件：
+	    ./nginx -t
+
 		
 nginx配置文件：
 	位置：/usr/local/nginx/conf/nginx.conf
@@ -89,7 +95,7 @@ nginx配置文件：
 			
 			比如：worker processes 值越大，可以支持的并发处理量也越多
 			
-		events：
+		events块：
 			设计的指令主要影响Nginx服务器与用户的网络连接，常用的设置包括是否开启对多 work processes下的网路
 			连接进行序列化，是否允许同时接收多个网络连接，选取那种事件驱动模型来处理连接请求，每个word process
 			可以同时支持的最大连接数
@@ -101,60 +107,32 @@ nginx配置文件：
 			http全局块：
 				http全局块配置指令包括文件引入、MIME-TYPE 定义、日志自定义、连接超时时间、单链接请求数上限等
 			
-			server块：
+			server块：http块中可以包含多个server块
 				和虚拟主机有密切关系，虚拟主机从用户角度看，和一台独立的硬件主机完全一样，节省了互联网服务器的硬件成本
 				每个http块可以包括多个server块，而每个server块就相当于一个虚拟主机，而每个server块也分为全局server块，
 				以及可以同时包含多个location块
-				
-				全局server块：
-					最常见配置是本虚拟主机的监听配置和本虚拟主机的名称或IP
-					
+
 				location块：
 					一个server块可以配置多个location块
+					这块主要作用是基于Nginx监听的端口接收到的请求进行路径匹配进行转发
 					这块主要作用是基于Nginx接收到的请求字符串（例如 server_name/uri-string），对虚拟主机名称(也可以IP别名)
 					之外的字符串(例如 前面的/uri-string)进行匹配，对特定的请求进行处理。地址定向、数据缓存和应答控制等功能，
 					还有许多第三方模块的配置也在这里进行
 					
 实现反向代理：
-	1、实现效果
-	例如：浏览器请求www.abc.com自动跳转tomcat8080的页面
-	2、实例实现步骤
-		（1）windows的hosts文件加上ip和域名的映射关系
-			文件结尾加上	IP 域名
-		（2）nginx转发配置（反向代理）
-				配置接收的请求
-			   server {
-					listen       80;
-					# server_name  localhost;
-					#接收到192.168.31.129:80的请求就转发至localtion配置的地址
-					server_name  192.168.31.129;
-					#charset koi8-r;
+    语法:
+    server{
+        # nginx作为web服务器监听的端口,当服务器的该端口接收到请求时进行过滤
+        listen 端口;
+        #http块中每个虚拟主机的名称
+        server_name  192.168.31.129;
+        location 过滤请求的uri{
+            proxy_pass 转发的url;
+        }
+        location ..
+    }
 
-				 location / {
-					root   html;
-					#转发地址
-					proxy_pass http://192.168.31.129:8080;
-					index  index.html index.htm;
-				}
-
-	3、使用反向代理实现访问路径跳转不同端口服务中
-		nginx监听端口9001
-		访问http:127.0.0.1:9001/edu/直接跳转127.0.0.1:8080
-		访问http:127.0.0.1:9000/vod/直接跳转127.0.0.1:8080
-		
-		  server {
-				listen       9000;
-			#   listen       somename:8080;
-				server_name  192.168.31.129;
-				#过滤的路径
-				location ~ /vod/ {
-				#       root   html;
-				#       index  index.html index.htm;
-				#转发的地址
-						 proxy_pass http://127.0.0.1:8080;
-			 }
-		 }
-	4、注意location配置过滤路径：
+	注意location配置过滤路径：
 		location [ = | ~ | ~* | ^~] uri {
 		
 		}
@@ -169,6 +147,128 @@ nginx配置文件：
 		注意：如果uri包含正则，则必须要有~或者~*标识
 		以上是针对请求的uri做的校验
 
-	
-		
-	
+实现负载均衡:
+    语法：
+        1、在http块中加上
+		upstream 一组服务器的别名，用于转发时进行负载均衡调用{
+		    # 服务列表
+		    server ip:port;
+		    ...
+		}
+		2、在反向代理配置中将ip:port配置改为服务器的别名
+		location 过滤请求的uri{
+            proxy_pass http://别名;
+        }
+
+    注意：若在upstream的服务列表中写了http://，则在proxy_pass中不用写http://
+        upstream可以配置多个
+    负载均衡分配策略：
+        1、默认轮询，语法中就是轮询
+            按照时间顺序逐一分配到不同的服务单元，若某个服务挂了，则自动从列表剔除
+        2、weight:权重，默认1，数值越大被分配的客户端越多
+            server ip:port weight=10000;
+            ..
+	    3、ip hash:
+	        每个请求按访问ip的hash结果分配，每个用户访问固定的一个服务单元，可以解决session问题
+	       upstream 一组服务器的别名，用于转发时进行负载均衡调用{
+	            ip_hash;
+                # 服务列表
+                server ip:port;
+                ...
+           }
+        4、fair(第三方):
+            按服务单元的响应时间来分配，时间短的优先分配
+            upstream 一组服务器的别名，用于转发时进行负载均衡调用{
+                fair;
+                # 服务列表
+                server ip:port;
+                ...
+            }
+
+实现动静分离：
+    Nginx动静分离简单来说就是把动态跟静态请求分开，不能理解成只是单纯的把动态页面和静态页面物理分离。
+    严格意义上说应该是动态请求跟静态请求分开，可以理解成使用Nginx处理静态页面，http服务器处理动态页面。
+    动静分离从目前实现角度来讲大致分为两种：
+    一种是纯粹把静态文件独立成单独的域名，放在独立的服务器上，也是目前主流推崇的方案;
+    另外一种方法就是动态跟静态文件混合在一起发布，通过nginx来分开。
+
+    通过location 指定不同的后缀名实现不同的请求转发。
+    通过expires参数设置，可以使浏览器缓存过期时间，减少与服务器之前的请求和流量。
+    具体Expires定义:是给一个资源设定一个过期时间，也就是说无需去服务端验证，直接通过浏监器自身确认是否过期即可，
+    所以不会产生额外的流量。此种方法非常适合不经常变动的资源。(如果经常更新的文件，不建议使用Expires来缓存)
+    若设置3d，表示在这3天之内访问这个URL，发送一个请求，比对服务器该文件最后更新时间没有变化，则不会从服务器抓取，返回状态码304，
+    如果有修改，则直接从服务器重新下载，返回状态码200。
+    expires times
+        times 可以是：
+        2s 2秒,2m 2分钟,2h 2小时,2d 2天,-1 不缓存，用于过期,max ：31 December2037 23:59:59GMT
+    语法：
+        location 请求静态资源的路径 {
+            root 静态资源所在目录;
+            index index.html index.htm;
+            expires times;
+        }
+        location 请求静态资源的路径 {
+            root 静态资源所在目录;
+            # 访问静态资源路径返回资源列表
+            autoindex on;
+        }
+    例如:location ~ /image/ {
+            # 磁盘位置：/data/image/01.jpg
+            root /data/;
+            index index.html index.htm;
+            expires 3d;
+         }
+
+nginx高可用：
+    原理参考图片
+    条件：两台nginx服务器，keepalived，虚拟IP
+        安装keepalived
+            yum install keepalived -y
+        会在etc下生成keepalived文件夹，有文件keepalived.conf
+    高可用的实现(主备模式)：
+        1、不需要修改nginx配置，只需修改keepalived.conf
+        2、添加检测脚本(shell脚本)
+        3、启动nginx和keepalived
+            systemctl start keepalived.service
+        4、测试：ip a
+            查看虚拟ip绑定
+           通过虚拟IP在浏览器访问nginx主页面
+           停掉主服务器上keepalived和nginx还可以访问
+    keepalived和nginx检测脚本的配置：参考配置文件
+
+nginx运行原理：1个master和多个worker，参考png图片 nginx执行原理和worker获取请求的原理
+    master:主进程,管理 nginx 的 worker process (工作进程) 的
+    好处：
+        1、支持热部署：./nginx -s reload
+            立即重新加载没有执行请求的worker，不会停止master，而正在执行请求的worker不受影响
+            未重新加载的worker在请求执行完毕后才会重新加载
+        2、每个worker都是独立进程，不需要加锁，节省开销，同时在编程以及问题查找时，也会方便很多。
+        3、worker采用独立的进程，可以让互相之间不会影响，一个进程退出后，其它进程还在工作，服务不会中断，
+           master 进程则很快启动新的 worker 进程。当然，worker进程的异常退出，肯定是程序有bug了，异常退出，
+           会导致当前worker上的所有请求失败，不过不会影响到所有请求，所以降低了风险。
+    如何设置worker数量？
+        nginx和redis类似都采用了io多路复用机制，每个worker都是独立进程，但每个进程里只有一个主线程，通过异步非阻塞的方式
+        处理请求，即使上万请求也不在话下。每个worker的线程可以把一个cpu的性能发挥到极致。
+        所以worker数和服务器的cpu数相等是最合适的，设置少了会浪费cpu，设置多了会造成cpu频繁切换上下文带来损耗。
+        # 设置worker数量
+        worker_processes cpu数
+        # work绑定cpu(几个worker绑定几个)
+        worker_cpu_affinity	cpu数、开启进程
+            充分利用多核cpu，cpu是任务处理，当计算最费时的资源的时候，cpu核使用上的越多，性能就越好
+            01 10	                2核cpu，开启2个进程
+            01 10 01 10	            2核cpu，开启4个进程
+            0101 1010	            4核cpu,开启2个进程
+            0001 0010 0100 1000	    4核cpu，开启4个进程
+
+    worker_connection:连接数
+            这个值是表示每个worker进程所能建立连接的最大值，所以，一个nginx能建立的最大连接数，应该是worker_connections*worker_processes。
+            当然，这里说的是最大连接数，对于 HTTP请求本地资源来说，能够支持的最大并发数量是 worker_connections*worker_processes，
+            如果是支持http1.1的浏览器每次访问要占两个连接，所以普通的静态访间最大并发数是: worker_connections*worker_processes/2，
+            而如果是HTTP作为反向代理来说，最大并发数量应该是worker_connections*worker_processes/4
+            因为作为反向代理服务器，每个并发会建立与客户端的连接和与后端服务的连接，会占用两个连接。"
+        问题：
+            第一个:发送请求，占用了 woker 的几个连接数?
+                答案:2或者4个
+            第二个:nginx有一个 master，有四个woker，每个 woker 支持最大的连接数 1024，支持的最大并发数是多少?。
+                普通的静态访问最大并发数是: worker_connections*worker_processes /2,
+                而如果是HTTP 作 为反向代理来说，最大并发数量应该是worker_connections*worker_processes/4.

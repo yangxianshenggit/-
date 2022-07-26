@@ -64,8 +64,8 @@ SE重点归纳：
 	变量的划分
 		根据数据类型不同分为基础数据类型和引用数据类型
 		基础数据类型：byte short int long float double boolean char	
-							1		2	  4	8		4		8		 1		  2
-				默认值   0     0    0   0L    0F    0.0D     false  \u0000
+					1	  2	    4	8	4		8	 1		  2
+			默认值   0     0    0   0L    0F    0.0D     false  \u0000
 	变量作用域问题
 		变量声明位置：在类中时成员变量，在方法中是局部变量
 04 数据类型：八大基础数据类型，引用数据类型
@@ -305,7 +305,7 @@ SE重点归纳：
 		equals比的是内容，一个一个相对比，一旦有不一样的直接终止对比。
 		比如 “admin”和“adinm”，到m和i比较时直接false
   接口和抽象类的区别
-	  1.接口是公开的，接口中不能有私有方法或者变量，而抽象类是可以有私有属性和私有方法的
+	  1.接口是公开的，接口中不能有私有方法或者变量,构造方法，而抽象类是可以有私有属性和私有方法，构造的
 	  2.接口实现类在实现接口的时候一定要实现接口中定义的所有的方法,
 		  而抽象类是可以有选择的去重写需要用到的方法
 	  3.接口之间是可以实现多重继承的,而一个类只能继承一个父类，但是可以实现多个接口.
@@ -412,7 +412,7 @@ SE重点归纳：
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd
 	HH:mm:ss");
 	System.out.println(sdf.format(today));
-
+    日历：calendar日期的加减
 		基本数据类型						它们的包装类
 	byte									Byte
 	short									Short
@@ -486,7 +486,7 @@ SE重点归纳：
 	集合中添加的都是内存地址，或基础数据类型包装类，自动拆箱装箱
 
 	comparator位于java.util下，是一个比较器，进行对象比较时需先实现接口重写compar方法，
-	在进行调用该接口方法时还需借助collections.scort(list,new comparator)方法
+	在进行调用该接口方法时还需借助collections.sort(list,new comparator)方法
 	public class DescComparator implements Comparator<Student> {
     /*Student stu=new Student();*/
     //降序
@@ -497,7 +497,7 @@ SE重点归纳：
 			  }
 			  return (int) (o2.getGrade()-o1.getGrade());
 		 }
-	}
+	  }
 
 	Comparable  是一个排序接口 位于 java.lang.Comparable ，如果一个类实现了Comparable接口，那就意味“ 该类支持排序” 
 	public class Student implements Comparable <Student>{

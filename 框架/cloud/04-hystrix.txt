@@ -1,0 +1,82 @@
+1、服务雪崩
+    本质：线程没有及时回收，线程耗尽导致业务链路上的服务不可用
+         不管是调用成功还是失败，只要线程可以及时回收，就可以解决服务雪崩
+    例如：
+        1、用户请求A服务，A的tomcat会分配一个线程支持用户的访问，A发现完成用户的操作需要调用B
+        2、A请求B，B的tomcat会分配一个线程支持A的访问，B发现完成A的操作需要调用C
+        3、B调用C，C宕机了，B并不知道还是一如既往调用C
+        产生问题：
+            A和B的线程没有回收，此时有大量的请求进入A或B，A或B会报503 service unavailable 服务不可用
+            在分布式链路中，只要有一个服务宕机，就可能导致一整个业务线的瘫痪
+    解决方案：
+        目的：可以容忍服务挂掉，但需要有备份方案，不能让整个业务线瘫痪
+        1、调整等待时间，可以缓解压力；但有局限性，不灵活，有的业务可能需要更多的时间去执行
+        2、设置拦截器,上游服务知道下游服务的状态，ok就访问，宕机就return
+        这样就可以缓解服务雪崩
+2、Hystrix：断路器、熔断器是什么？
+    正常情况下断路器是关的 只有出了问题才打开;用来保护微服务不雪崩的方法
+    Hystrix 是 Netflix 公司开源的一个项目，它提供了熔断器功能，能够阻止分布式系统中出现 联动故障。
+    Hystrix 是通过隔离服务的访问点阻止联动故障的，并提供了故障的解决方案，从而提高了整个分布式系统的弹性。
+3、使用 Hystrix
+    当有服务调用的时候，才可能会出现服务雪崩，所以 Hystrix 常和 OpenFeign，Ribbon 一起出现
+    方案1：√√√√√
+        1、pom依赖
+                <dependency>
+                    <groupId>org.springframework.cloud</groupId>
+                    <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+                </dependency>
+        2、给feign接口创建实现类，并交给spring管理，实现类中的方法就是备用方案
+        3、feign接口的@FeignClient(value="applicationName")添加属性
+            fallback=实现类.class
+            指定熔断的类
+        4、在cloud的F版之前feign对hystrix的支持默认开启，F版之后须在yml中指定支持
+           因在F版之前只有hystrix一个熔断器，F版之后又有新的熔断器：alibaba.sentinel
+            feign:
+              hystrix:
+                enabled: true #开启hystrix支持
+    方案2：ribbon+restTemplate,没有集成hystrix
+        1、pom依赖
+        2、springboot启动类上添加注解
+            @EnableCircuitBreaker //开启断路器
+        3、在控制层的方法上添加注解，并指定失败回调的方法
+            @HystrixCommand(fallbackMethod = "xxx")
+            注意：回调函数和被调用函数的方法签名保持一致
+4、宕机服务恢复正常重新注册eureka，熔断器会自动关闭
+5、hystrix原理:参考图片    hystrix原理.jpg
+    1、原先A服务调用B服务是直接通过http请求调用，hystrix相当于在A服务增加拦截器，通过拦截器访问B服务
+    2、熔断器的状态：关-->开-->半开-->关-->..
+        关：默认情况下断路器是关闭状态，A服务正常调用B服务
+        开：在一个时间窗口内(几秒内)访问失败的次数达到了一个阈值，断路器开
+        半开：随后服务调用中让少许流量去尝试调用，若调用正常，断路器关
+6、hystrix配置：
+    hystrix: #hystrix 的全局控制
+      command: #指令、命令
+        default: #default 是全局控制，也可以换成单个方法控制，把 default 换成方法名即可
+          circuitBreaker: #熔断器
+            enabled: true #开启断路器功能
+            requestVolumeThreshold: 10 #失败次数（阀值）默认20 ,在窗口睡眠时间内失败次数达到阈值就开启断路器；
+                                       # 请求量比较大时这个值可以设大点：ali百万级访问量设30次，换句话说窗口期内请求总数都不到该阈值，断路器连开启的资格都没有
+            sleepWindowInMilliseconds: 20000 #窗口期,触发断路器的周期时间
+            errorThresholdPercentage: 60 #窗口期内失败率达到该值开启断路器，默认50%
+          execution: #执行
+            isolation: #隔离
+              Strategy: thread #隔离策略(方式) thread 线程隔离集合和 SEMAPHORE 信号量隔离级别
+              thread:
+                timeoutInMilliseconds: 3000 #调用超时时长
+          fallback:
+            isolation: #隔离
+              semaphore: # 信号量隔离级别
+                maxConcurrentRequests: 1000 #信号量隔离级别最大并发数
+
+7、hystrix的隔离说明：
+    两种隔离方式:
+        1、thread 线程池：每个服务提供者一个线程组，每组默认10个线程，用户请求的线程和做远程的线程不一样，由hystrix代理feign进行远程调用
+            好处 服务提供者之间互不影响，一个服务熔断机制开启不影响其他服务；在用户访问比较大的情况下使用比较好，异步的方式
+            缺点 线程间切换开销大（处理用户请求的线程和hystrix代理feign进行远程调用线程的切换），对机器性能影响
+            应用场景 调用第三方服务 并发量大的情况下
+        2、SEMAPHORE 信号量隔离 每次请进来 有一个原子计数器 做请求次数的++ 当请求完成以后 --，这个原子计数器所有的服务提供者共享
+             好处 对cpu 开销小，没有切换开销
+             缺点 隔离不彻底，当一个提供者出现问题，可能会波及到其他提供者
+             场景 使用内部调用，并发小的情况下
+
+    源码入门 HystrixCommand、AbstractCommand、HystrixThreadPool

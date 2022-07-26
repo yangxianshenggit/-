@@ -199,4 +199,22 @@ redis哨兵：
      Sentinel 会在 Master 下线后自动执行故障转移操作，提升一台 Slave 为 Master，并让其它
      Slave 成为新 Master 的 Slave
 redis6.0多线程
+redis缓存穿透、缓存击穿、缓存雪崩
+    原理：查看javase 分时操作系统CPU调度.jpg
+    缓存穿透：缓存穿透是指大量的并发绕过缓存，请求到数据库，从而压垮数据库。
+        String users = (String) valueOperations.get("users");
+        if (users == null || "".equals(users)) {
+            synchronized (this) {
+                users = (String) redisTemplate.opsForValue().get("users");
+                if (users == null || "".equals(users)) {
+                    List<User> list = userMapper.queryAll();
+                    users=list.toString();
+                    valueOperations.set("users", users);
+                }
+            }
+        }
+    缓存击穿：缓存击穿是指缓存中没有但数据库中有的数据（一般是缓存时间到期），这时由于并发用户特别多，
+            同时读缓存没读到数据，又同时去数据库去取数据，引起数据库压力瞬间增大，造成过大压力
+    缓存雪崩：指缓存同一时间大面积的失效，后面的请求都会落到数据库上，造成数据库短时间内承受大量请求而崩掉。
+        常见原因：1、redis服务器挂掉了。2、对缓存数据设置了相同的过期时间，导致某时间段内缓存集中失效。
 

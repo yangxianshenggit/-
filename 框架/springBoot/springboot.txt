@@ -1,6 +1,6 @@
-springboot特性：
+springboot特性：约定优于配置
     能够快速创建基于Spring的应用程序
-    能够直接使用java main方法启动内嵌的Tomcat服务器运行Spring Boot程序，不需要部署war包文件
+    能够直接使用java main方法启动内嵌的 Tomcat服务器运行Spring Boot程序，不需要部署war包文件
     提供约定的starter POM来简化Maven配置，让Maven的配置变得简单
     自动化配置，根据项目的Maven依赖配置，Spring boot自动配置Spring、Spring mvc等
     提供了程序的健康检查等功能
@@ -20,4 +20,298 @@ springboot四大核心：
         Spring boot目前分为两大版本系列，1.x系列和2.x系列
         推荐使用Maven 3.3+，Maven目前最新版本为3.6.0(2019.01)
         推荐使用Java 8，Spring Boot 1.x系列的版本兼容Java 6，Spring Boot 2.x系列需要至少Java8
+springboot的创建以及目录结构请看同目录下截图
+    .mvn|mvnw|mvnw.cmd：使用脚本操作执行maven相关命令，国内使用较少，可删除
+    .gitignore：使用版本控制工具git的时候，设置一些忽略提交的内容
+    static|templates：后面模板技术中存放文件的目录
+    static：放一些静态内容 css js img
+    templates：基于模板的html
+    application.properties：SpringBoot的配置文件，很多集成的配置都可以在该文件中进行配置，例如：Spring、springMVC、Mybatis、Redis等。目前是空的
+    Application.java：SpringBoot程序执行的入口，执行该程序中的main方法，SpringBoot就启动了，自动启动内置tomcat运行
+springboot配置注意事项：
+    1、一个maven项目若要为springboot项目则pom中必须继承springboot父工程，它用来提供相关的Maven默认依赖
+    2、@SpringBootApplication注解是Spring Boot项目的核心注解，主要作用是开启Spring自动配置，
+    如果在Application类上去掉该注解，那么不会启动SpringBoot程序
+    3、新创建的类一定要位于Application同级目录或者下级目录，否则SpringBoot加载不到。因为springboot默认扫描该类同级目录及其子目录
+    4、Spring Boot的核心配置文件用于配置Spring Boot程序，名字必须以application开始
+springboot配置文件：
+    1、不推荐使用xml，xml结构化可读性强，推荐使用properties或yml(yaml)
+    yml文件和properties文件没有任何区别，只是不同配置方式而已。
+    yml类似xml，都是结构化语言，但语法比xml简单很多，值与前面的冒号配置项必须要有一个空格
+    2、多环境配置
+        为每个环境创建一个配置文件，命名必须以application-环境标识.properties|yml
+        在总配置文件application.properties进行环境的激活
+            spring.profiles.active=product
+            等号右边的值和配置文件的环境标识名一致，可以更改总配置文件的配置，重新运行Application，查看启动的端口及上下文根
 
+    3、初始化参数配置
+        1、在application的配置文件中自定义初始化参数
+        school.name=xxx
+        在类中引入
+        @Value("${school.name}")
+        private String name;
+        2、若application的配置文件中自定义初始化参数较多
+        将整个文件映射成一个对象，用于自定义配置项比较多的情况
+        @Component
+        @ConfigurationProperties(prefix = "school")
+        public class ConfigInfo {
+            private String name;
+            public String getName() {
+                return name;
+            }
+            public void setName(String name) {
+                this.name = name;
+            }
+        }
+        在需要的地方将该类作为属性注入即可
+    4、指定Mybatis映射文件的路径
+      mybatis.mapper-locations=classpath:mapper/*.xml
+Spring Boot 事务支持
+      Spring Boot 使用事务非常简单，底层依然采用的是Spring本身提供的事务管理
+      在入口类中使用注解 @EnableTransactionManagement 开启事务支持
+      在访问数据库的Service方法上添加注解 @Transactional 即可
+      默认监测RuntimeException，可以进行配置增加其他异常@Transactional(rollbackFor = FilerException.class)
+springboot使用rest架构
+    互联网软件架构设计的风格，不是标准，它只是提出了一组客户端和服务器交互时的架构理念和设计原则
+    请求资源，然后按照请求的方式进行处理，任何的技术都可以实现这种理念，如果一个架构符合REST原则，就称它为RESTFul架构
+    http://localhost:8080/springboot/std/{id}
+    @DeleteMapping("/springboot/std/{id}")
+    public Object removeStu(@PathVariable("id")String tid){..}
+    总结：
+        传递参数变简单了
+        服务提供者对外只提供了一个接口服务（路径），而不是传统的CRUD四个接口
+    restful冲突问题：
+        在控制层两个方法请求的路径一样，请求参数的类型也一样，这时服务器区分不出要请求哪个方法
+        解决方案：1、修改其中一个的请求路径  2、修改请求方式
+    restful使用场景
+        1、增post请求、删delete请求、改put请求、查get请求
+        2、请求路径不要出现动词
+        3、分页、排序等操作，不需要使用斜杠传参数
+        4、一般传的参数不是数据库表的字段，可以不采用斜杠
+springboot集成mybatis
+    1、mybatis集成springboot依赖
+    2、mybatis逆向工程配置、和pom加插件，生成实现类，接口和xml映射
+    3、在springboot启动类上添加批量扫描包注解@MapperScann
+    或 在mapper接口上加上 @Mapper
+    mybatis会将接口通过动态代理生成实现类，并自动将实现类交给spring管理
+    4、将xml映射路径告知mybatis
+          指定Mybatis映射文件的路径
+          mybatis.mapper-locations=classpath:mapper/*.xml
+          配置数据源
+springboot集成redis
+    1、redis单例集成
+        springboot集成redis依赖
+        application.properties配置redis属性
+            # redis单机模式连接
+            spring.redis.host=192.168.31.132
+            spring.redis.port=6380
+            spring.redis.password=1qaz2wsx
+            连接池配置走默认
+        在应用到redis的实现类属性注入redisTemplate
+        //设置key序列化，方便在客户端查看redis的key，不设置也不影响
+         redisTemplate.setKeySerializer(new StringRedisSerializer());
+         //开启string类型
+         redisTemplate.opsForValue().get(key);
+    2、redis哨兵集群集成
+springboot集成dubbo
+    1、dubbo公共接口服务只需普通maven项目
+    2、dubbo-provider：
+       pom依赖：zk客户端、dubbo集成springboot、dubbo公共接口服务
+       启动类开启dubbo配置：
+            @EnableDubboConfiguration
+       服务提供实现类上配置注解暴漏接口
+            @Service(interfaceClass=xxxService.class,version=xxx,timeout=20000)
+       springboot配置：
+            #服务提供者应用名称必须写，且不能重复
+            spring.application.name=005-dubbo-provider
+            #表示是服务提供者，可以省略
+            spring.dubbo.server=true
+            #注册中心地址
+            spring.dubbo.registry=zookeeper://192.168.31.132:2181
+    3、dubbo-consumer:
+       pom依赖：zk客户端、dubbo集成springboot、dubbo公共接口服务
+       启动类开启dubbo配置：
+            @EnableDubboConfiguration
+       控制层属性注入服务消费者对象上配置注解调用接口
+           @Reference(interfaceClass = UserService.class, version = "1.0.0", timeout = 20000)
+       springboot配置：
+            #注册中心地址
+            spring.dubbo.registry=zookeeper://192.168.31.132:2181
+            # 应用名称
+            spring.application.name=006-dubbo-consumer
+springboot热部署
+    在实际开发中，我们修改某些代码逻辑功能或页面都需要重启应用，这无形中降低了开发效率，
+    热部署是指当我们修改代码后，服务能自动重启加载新修改的内容，而不需要重启应用，这样大大提高了我们开发的效率。
+        <!--SpringBoot热部署插件-->
+        <dependency>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-devtools</artifactId>
+           <optional>true</optional>
+        </dependency>
+        在修改完毕代码后，需要选中项目，在idea菜单栏的Build选项中选择Build Module
+springboot的java项目
+             /**
+             * SpringBoot程序启动后，返回值是ConfigurableApplicationContext，它也是一个Spring容器对象
+             * 它其它相当于原来Spring中启动容器ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("");
+             */
+            //获取SpringBoot程序启动后的Spring容器
+            ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+            //从Spring容器中获取指定bean的对象
+            UserService userService = (UserService) context.getBean("userServiceImpl");
+            //调用业务bean的方法
+            String sayHello = userService.sayHello();
+            System.out.println(sayHello);
+springboot测试
+        springboot工程test包下自带测试类，该注解可以自动加载springboot配置，并将该类交给spring管理
+        @SpringBootTest
+        class ApplicationTests {
+            @Autowired
+            UserService userService;
+            @Test
+            void contextLoads() {
+                long l = userService.userCount();
+                System.out.println(l);
+            }
+        }
+springboot集成servlet
+    加依赖
+    方式1：通过注解方式实现
+        编写servlet类
+            @WebServlet(urlPattern="/xxx")
+        在springboot启动类上加注解
+            @ServletComponentScan("com.abc.springboot.servlet")
+    方式2：通过配置类
+        编写普通的servlet类
+        在写一个spring配置类
+        @Configuration //添加@Configuration 将此类变为配置类
+springboot集成过滤器Filter
+    加依赖
+    方式1：注解方式
+        编写Filter类
+        @WebFilter(urlPatterns = "/*")
+        public class MyFilter implements Filter {
+            @Override
+            public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+                System.out.println("您已进入filter过滤器，您的请求正常，请继续遵循规则....");
+                filterChain.doFilter(servletRequest,servletResponse);
+            }
+        }
+    在springboot启动类上加注解
+         @ServletComponentScan("com.abc.springboot.servlet")
+    方式2：配置类
+        编写普通的Filter类
+        在写一个spring配置类
+        @Configuration //添加@Configuration 将此类变为配置类
+
+springboot设置字符编码过滤器
+    方式1：springmvc的方式设置request、response
+    方式2：
+        在springboot配置文件
+            #设置请求响应的字符编码
+            spring.http.encoding.enabled=true
+            spring.http.encoding.force=true
+            spring.http.encoding.charset=UTF-8
+springboot集成springmvc拦截器：
+    方式1：mvc的xml配置方式实现
+    方式2：springboot注解方式配置类实现：
+        public class xxx implements HandlerInterceptor{
+                //访问资源前拦截
+                @Override
+                public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+                    //false拦截，true放行
+                    return false;
+                }
+                //访问中拦截
+                @Override
+                public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {}
+                //跳转视图前拦截
+                @Override
+                public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {}
+        }
+
+         /**
+         创建一个配置类InterceptorConfig，并实现WebMvcConfigurer接口， 覆盖接口中的addInterceptors方法，
+         并为该配置类添加@Configuration注解，标注此类为一个配置类，让Spring Boot 扫描到，这里的操作就相当于SpringMVC的注册拦截器 ，
+         */
+        @Configuration //注册一个拦截器,相当于applicationContext-mvc.xml配置
+        public class InterceptorConfig implements WebMvcConfigurer {
+            @Override
+            public void addInterceptors(InterceptorRegistry registry) {
+                //定义需要拦截的路径
+                String [] addPathPatterns = {
+                        "/springBoot/**"
+                };
+                //定义不需要拦截的路径
+                String [] excludePathPatterns = {
+                        "/springBoot/login",
+                        "/springBoot/register"
+                };
+                registry.addInterceptor(new LoginInterceptor())
+                .addPathPatterns(addPathPatterns)//定义拦截的路径
+                .excludePathPatterns(excludePathPatterns);//定义不需要拦截的路径,这些路径不会进入拦截器
+            }
+
+springboot集成logback
+     1、idea下载lombok插件，pom加依赖
+     2、在resources目录下编写xxx-spring.xml日志配置文件，
+        springboot默认 -spring 的文件名作为你的日志配置（如使用 logback-spring.xml ，而不是 logback.xml），
+        命名为 logback-spring.xml 的日志配置文件。 默认的命名规则，并且放在 src/main/resources 下
+        若没遵循默认配置则在springboot配置中指定位置
+        logging.config=classpath:xxx.xml
+     3、在类上加注解@Slf4j
+        在类中需要加日志的地方使用log.xxx();
+     4、注意：必须在idea开启注解配置，否则IDE运行不生效
+         File | Settings | Build, Execution, Deployment | Compiler | Annotation Processors
+springboot打包：
+    jar:默认就打jar,直接使用maven插件打包
+    war:
+    （1）程序入口类需扩展继承 SpringBootServletInitializer类并覆盖configure方法
+        @SpringBootApplication
+        public class Application extends SpringBootServletInitializer{
+           public static void main(String[] args) {
+              SpringApplication.run(Application.class, args);
+           }
+           @Override
+           protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        //参数为当前Spring Boot启动类Application.class
+              return builder.sources(Application.class);
+           }
+        }
+    （2）在 pom.xml中添加（修改）打包方式为war
+         <packaging>war</packaging>
+    （3）在 pom.xml中配置springboot打包的插件(默认自动加)
+        <!--SpringBoot 的打包插件-->
+        <plugin>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+    （4）在pom.xml中配置将配置文件编译到类路径
+        <!--src/main/resources下的所有配置文件编译到classes下面去-->
+        <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+        </resource>
+        <!--mybatis的mapper.xml-->
+        <resource>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.xml</include>
+            </includes>
+        </resource>
+        <resource>
+             <!--源文件位置-->
+             <directory>src/main/webapp</directory>
+             <!--指定编译到META-INF/resources目录下，该目录不能随便编写-->
+             <targetPath>META-INF/resources</targetPath>
+             <!--指定包含文件-->
+             <includes>
+                 <include>**/*.*</include>
+             </includes>
+        </resource>
+    （5）在pom.xml的build标签下通过finalName指定打war包的名字
+       <!--指定打war包的名字-->
+       <finalName>036-springboot-war</finalName>
+    （6）在src/main/下创建webapp/WEB-INF目录，并创建web.xml
+    直接使用maven插件打包

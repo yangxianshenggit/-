@@ -14,11 +14,11 @@ tomcat
 
 4、tomcat常用命令：
 	windows启动：双击startup.exe
-	windows停止：双击shoutdown.exe
+	windows停止：双击shutdown.exe
 	linux启动：./startup.sh
-	linux停止：./shoutdown.sh
+	linux停止：./shutdown.sh
 	
-5、浏览器访问tomcat首页：ip:iport
+5、浏览器访问tomcat首页：ip:port
 
 6、Tomcat目录和文件介绍
 
@@ -40,8 +40,9 @@ tomcat
 	导jar包,推荐还是在WEB-INF目录下创建lib的方式导jar,WEB-INF受保护的，不能通过浏览器直接访问，必须经过java代码跳转才行
 8、tomcat修改文件需重启服务器,因为需要重新发布。idea默认发布到out目录
 
-9、selvet是什么？
-	tomcat是sun和apache开发的http服务器，tomcat内置了selvcet API（规范），负责接收和处理客户端请求
+9、servlet是什么？
+	tomcat是sun和apache开发的http服务器，
+	tomcat内置了 servlet API（规范），负责接收和处理客户端请求
 10、web.xml是什么？
 	服务器启动时会第一时间加载和读取web.xml，该文件中配置外界访问服务器的访问路径
 	<!--配置一个servlet，用于接收客户端请求-->

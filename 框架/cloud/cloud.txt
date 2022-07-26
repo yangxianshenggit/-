@@ -1,0 +1,51 @@
+1、cloud与boot的技术选型
+    官方推荐的cloud和boot版本的兼容性(版本不统一可能会引发一系列环境问题)
+    访问官网：https://start.spring.io/actuator/info
+    会返回版本json串，去其中选择cloud和boot版本
+    或直接去官网查询：推荐
+2、cloud升级停更：被动维护bug，许多技术停更，但有替代者springCloud Alibaba
+    参看图片：cloud停更后替换的组件.png
+3、cloud文档：
+     官方英文：https://start.spring.io
+     中文版
+        https://www.bookstack.cn/read/spring-cloud-docs/docs-project-SpringCloudConfig.md
+4、创建maven聚合工程
+    1、创建工作空间
+    2、配置字符编码、编译器版本、maven环境、注解配置支持等开发环境
+    3、创建父工程maven-java项目，配置依赖版本号、依赖和插件
+        一个maven_java工程继承springboot工程，那么它就是一个springboot工程
+        一个maven_java工程依赖中有springboot依赖，那么它就是一个springboot工程
+    4、创建子模块maven-java项目
+        手动配置pom、配置application.properties/yml，配置springboot启动类，他就是一个springboot工程
+5、微服务之间调用使用http方式，restFul风格使用频率极高
+    openFeign+ribbon/restTemplate+ribbon
+    其中restTemplate的post请求会将请求方式封装到请求体中，然后将请求头、请求体以json格式发送，因此接受的方法上加注解@RequestBody
+
+6、CAP原则：
+        一致性（Consistency）:集群数据是一致的
+        可用性（Availability）：集群中有个节点挂了，但还能对外提供服务
+        分区容错性（Partition tolerance）（这个特性是不可避免的）：分布式网络分区的原因，导致各个机器中短暂不一致，有延迟
+        CAP 原则指的是，在一个分布式系统中，这三个要素最多只能同时实现两点，不可能三者兼顾。
+7、注册中心为什么推荐Eureka,而不是zk
+        Eureka:AP数据可有有差异，但只要有一个节点活着就能提供服务
+        zookeeper:CP：数据强一致，但如果有个节点挂了有几分钟服务不可用
+        C : 数据的一致性 （A,B,C 里面的数据是一致的）
+        Zk 注重数据的一致性。
+        Eureka 不是很注重数据的一致性！
+        A: 服务的可用性（若 zk 集群里面的 master 挂了怎么办）Paxos（多数派）
+        在 zk 里面，若主机挂了，则 zk 集群整体不对外提供服务了，需要选一个新的出来（120s左右）才能继续对外提供服务！
+        Eureka 注重服务的可用性，当 Eureka 集群只有一台活着，它就能对外提供服务
+        P：分区的容错性（在集群里面的机器，因为网络原因，机房的原因，可能导致数据不会里面同步），它在分布式必须需要实现的特性！
+        Zookeeper 注重数据的一致性，CP zk(注册中心，配置文件中心，协调中心)
+        Eureka 注重服务的可用性 AP eureka （注册中心）
+   注册中心：推荐eureka nacos
+8、有些集群中的服务只有端口不一样，其余都一样
+    java -jar xxx.jar --server.port=xxxx
+    idea配置中只用复制启动的配置项修改端口即可
+9、cloud集成的组件：
+    eureka:DiscoveryClient//服务发现,根据应用名获取服务实例列表
+            List<ServiceInstance> instances=discoveryClient.getInstances("applicationName");
+    RestFul:RestTemplate//http的restful风格
+            restTemplate.get/post/put/delete For Object/Entity()
+    ribbon:LoadBalancerClient//根据服务ID获取一个服务实例
+            ServiceInstance instance=loadBalancerClient.choose(String serverID)

@@ -45,7 +45,7 @@ spring
 		
 	3、jar+配置文件生成beanFactory来获取bean
 		//BeanFactory就是IOC
-		BeanFactory beanFactory=new ClassPathAppliactionContext("AppliactionContext.xml");
+		BeanFactory beanFactory=new ClassPathXmlApplicationContext("ApplicationContext.xml");
 		beanFactory.getBean(xxx);
 		 //关闭bean工厂:
         ((ClassPathXmlApplicationContext)beanFactory).close();
@@ -69,7 +69,7 @@ spring
 			当scope为prototype时destroy-method不会执行,默认开启懒加载
 		request:每次请求都创建对象
 		session:每次会话创建对象
-		glibalSession:多系统之间每次会话创建对象
+		globalSession:多系统之间每次会话创建对象
 	8、bean在IOC的生命周期
 		IOC容器初始化创建对象到IOC容器调用close方法，不是指对象在内存中的生命周期
 		可以配置bean的初始化方法和销毁的方法，在这期间可以做一些操作
@@ -87,7 +87,7 @@ spring
 				详情看ApplicationContext.txt
 		2、在bean类上加注解对应层次的注解
 			默认Bean的ID号就是类名首字母小写，也可以指定自己命名的名字@Component("userHaha")
-			bean的对象属性注入 注解@Autowried,按类型注入，找不到按名称注入	注解@Resource,按名称注入
+			bean的对象属性注入 注解@Autowried,按类型注入	注解@Resource,默认按名称注入，找不到退化为按类型
 		3、注意注解方式对象属性注入，bean的对象属性为null说明没注入，对象属性的属性为null说明注入了只是没赋值
 	11、纯注解方式管理bean对象
 	配置类及测试方法查看springAnnotationConf.txt
@@ -114,7 +114,7 @@ spring
 			
 			@Autowired默认按照类型加载，类型找不到会按名字找，因此通常实现类被IOC容器管理会加别名(别名为接口名)
 			@Qualifier:默认按照类型加载，按名字查找required = true
-			@Resouce默认按名字加载，但是可以指定按类型加载，属于JSR-250标准
+			@Resouce默认按名字加载，找不到按类型加载，属于JSR-250标准
 			
 			@Primary指定Bean的加载顺序，优先加载
 			

@@ -2,9 +2,11 @@ LINUX
 ip:网络中的地址
 端口:	物理端口：网孔		逻辑端口:0~65535
 一个进程(服务)会占用一个或多个端口，但是一个端口只能被一个进程或服务占用
-tomcat占用8080、8443、8009，redis占用6379，mysql占3306，oracle占1521，nginx占10080
+tomcat占用8080、8443、8009，redis占用6379，mysql占3306，oracle占1521，nginx占80
 	
-	
+80端口是为HTTP（HyperText Transport Protocol)即超文本传输协议开放的，此为上网冲浪使用次数最多的协议，
+主要用于WWW（World Wide Web）即万维网传输信息的协议。可以通过HTTP地址（即常说的“网址”）加“: 80”来访问网站，
+因为浏览网页服务默认的端口号都是80，因此只需输入网址即可，不用输入“: 80”了。
 1、配置环境变量：
 	/etc/profile文件
 		例如配置jdk的：
@@ -87,11 +89,20 @@ tomcat占用8080、8443、8009，redis占用6379，mysql占3306，oracle占1521�
 15、cp -rf 拷贝的文件 拷贝的地方并重命名
 16、rm -rf 遍历删除
 17、find:查找指定文件	find -name "ab*"
-18、tar:解压缩
+18、tar:
 解压:tar -zxvf  文件 -C	解压到目标文件夹
-19、netstat查看端口号是否被占用	
+打包:tar -czvf 打包后的文件名称.tar.gz 打包的文件名
+查看压缩包内文件：tar -tzvf 压缩包名称
+查看压缩包内文件内容：zcat xxx.tar.gz|grep -a '检索条件'
+19、netstat查看端口号是否被占用
+    netstat 查看端口占用语法格式：
 
-netstat -an | grep 3306
+    netstat -tunlp | grep 端口号
+    -t (tcp) 仅显示tcp相关选项
+    -u (udp)仅显示udp相关选项
+    -n 拒绝显示别名，能显示数字的全部转化为数字
+    -l 仅列出在Listen(监听)的服务状态
+    -p 显示建立相关链接的程序名
 20、vi/vim:文件编辑命令
 
 - vi 文件名

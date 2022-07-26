@@ -1,4 +1,7 @@
 servlet
+    javaee核心规范，定义了如何接受和响应请求
+    web层拿到request、response什么问题都能解决
+    HttpServlet:基于http协议实现类Servlet接口
 一、互联网通信
 	1、互联网中的通信角色
 		客户端

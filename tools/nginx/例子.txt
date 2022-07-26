@@ -1,0 +1,46 @@
+反向代理实现效果
+	例如：浏览器请求www.abc.com自动跳转tomcat8080的页面
+	1、实例实现步骤
+		（1）浏览器如何解析域名？
+		    DNS(Domain Name System,域名系统),因特网上作为域名和IP地址相互映射的一个分布式数据库
+		    windows举例：首先到浏览器缓存中寻找，找不到到客户机的host文件中寻找，找不到到网络中的dns域名解析器中寻找
+
+		    windows的host文件加上ip和域名的映射关系
+			C:\Windows\System32\drivers\etc\hosts文件结尾加上	IP 域名
+		（2）nginx转发配置（反向代理）
+				配置接收的请求
+			   server {
+			        # nginx监听端口，根据客户端请求的端口匹配对应的server
+					listen       80;
+					# server_name  localhost;
+					#http块中每个虚拟主机的名称
+					server_name  192.168.31.129;
+					#charset koi8-r;
+                #location:客户端请求的路径进行过滤，通过进行转发
+				 location / {
+					root   html;
+					#转发地址
+					proxy_pass http://192.168.31.129:8080;
+					index  index.html index.htm;
+				}
+
+	2、使用反向代理实现访问路径跳转不同端口服务中
+		nginx监听端口9001
+		访问http:127.0.0.1:9001/edu/直接跳转127.0.0.1:8080
+		访问http:127.0.0.1:9000/vod/直接跳转127.0.0.1:8080
+
+		  server {
+				listen       9000;
+			#   listen       somename:8080;
+				server_name  192.168.31.129;
+				#过滤的路径
+				location ~ /vod/ {
+				        #转发的地址
+						 proxy_pass http://127.0.0.1:8080;
+			    }
+			    #过滤的路径
+                location ~ /test/ {
+                        #转发的地址
+                		 proxy_pass http://127.0.0.1:8080;
+                }
+		 }

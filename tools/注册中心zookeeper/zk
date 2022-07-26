@@ -1,0 +1,32 @@
+原理：ZooKeeper是一个分布式的，开源的分布式应用程序协调服务，可以通过特定协议来完成服务对外的统一
+    注册中心就是统一管理这些服务，提供服务提供者、消费者能够访问！
+    依赖java环境，dubbo官方推荐使用zookeeper
+    ZooKeeper是一个树形结构。这种树形结构和标准文件系统相似。ZooKeeper树中的每个节点被称为Znode。
+    和文件系统的目录树一样，ZooKeeper树中的每个节点可以拥有子节点。每个节点表示一个唯一服务资源
+
+zookeeper在win安装
+    1、解压即可用
+    2、配置的参考文件：zoo_sample.cfg，将他备份重命名zoo.cfg，zk运行会自动找这个文件
+    tickTime: 心跳的时间，单位毫秒. Zookeeper服务器之间或客户端与服务器之间维持心跳的时间间隔，也就是每个 tickTime时间就会发送一个心跳。表明存活状态。
+    dataDir:  数据目录，可以是任意目录。存储zookeeper的快照文件、pid文件，默认为/tmp/zookeeper，建议在zookeeper安装目录下创建data目录，将dataDir配置改为/usr/local/zookeeper-3.4.10/data
+    clientPort: 客户端连接zookeeper的端口，即zookeeper对外的服务端口，默认为2181
+
+        配置内容：
+        1.dataDir : zookeeper数据的存放目录
+        2. admin.serverPort=8888
+        原因：zookeeper 3.5.x 内部默认会启动一个应用服务器，默认占用8080端口
+
+    3、启动zk:bin下的zkServer.cmd
+
+在linux安装和win一样，linux查看zk的端口占用情况
+     netstat -ntulp | grep port
+     可以看出port占用情况，使用该端口的进程号
+     启动：./zkServer.sh start
+     停止: ./zkServer.sh stop
+
+Zookeeper是高可用的，健壮的。Zookeeper宕机，正在运行中的dubbo服务仍然可以正常访问。
+健壮性
+注册中心宕掉不影响使用，只是丢失部分采样数据
+注册中心仍能通过缓存提供服务列表查询，但不能注册新服务
+服务提供者无状态，任意一台宕掉后，不影响使用
+服务提供者全部宕掉后，服务消费者应用将无法使用，并无限次重连等待服务提供者恢复
