@@ -1,0 +1,61 @@
+官网： https://nacos.io/zh-cn/
+1、nacos功能：
+    动态服务发现、服务配置、服务元数据及流量管理
+2、nacos属于CS架构，但server已被搭建好，直接下载使用即可
+    1、先到spring官网查询稳定版本的alibaba、boot、cloud之间的版本关系
+    2、github查询alibaba的组件版本信息
+    3、github上下载对应版本的nacos服务端
+        https://github.com/alibaba/nacos/releases/tag/
+3、解压后目录：
+    bin：可执行文件夹目录，包含：启动、停止命令等等
+    conf：配置文件目录
+    target：存放 naocs-server.jar
+    LICENSE：授权信息，Nacos 使用 Apache License Version 2.0 授权
+    NOTICE：公告信息
+4、conf目录说明：参考nacos_conf目录说明.png
+
+--------------------------nacos-server解压后使用步骤----------------------------------
+5、Nacos 默认使用嵌入式数据库实现数据的存储，并不方便观察数据存储的基本情况，
+   修改配置文件使用 Mysql 数据库做数据的存储，方便观察数据的结构。
+   1） mysql新建数据库:nacos，将/nacos/conf/nacos-mysql.sql导入
+   2） 修改/nacos/conf/application.conf配置
+        将数据库相关配置信息的注释放开并修改信息
+   3） 指定启动的模式为单机版，nacos默认集群版
+       方式1：
+        windows: /nacos/bin/startup.cmd -m standalone
+        linux: /nacos/bin/startup.sh -m standalone
+        这里的-m 指model模式
+       方式2：
+        修改/nacos/bin/startup.cmd文件
+            set MODE="cluster"  --->    set MODE="standalone"
+        jvm调优参数:
+            jvm调优参数：-Xms512m：最小堆大小 -Xmx512m：最大堆大小 -Xmn256m：年轻代大小
+   4） 访问nacos页面：ip:默认端口8848/nacos
+   5） 登录nacos页面：用户名密码数据库表user中，其中密码是被安全框架加密的。默认都是nacos
+------------------------------------------nacos注册中心--------------------------------------------
+6、nacos做注册中心与eureka区别：nacos和eureka做注册中心区别1.jpg  nacos和eureka做注册中心区别2.jpg
+    1、nacos默认就有登录
+    2、eureka对项目隔离不彻底
+        当多个项目都用一套eureka做注册中心，若服务名称相同，则相同服务名称组成集群，会发生调用错乱的现象
+      nacos有命名空间的概念：一个项目一个命名空间，项目隔离很彻底
+      项目名
+        --组名
+            --服务名
+        --组名
+            --服务名
+7、简单配置：
+    pom导入依赖：
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+            </dependency>
+    yml:
+        spring:
+          cloud:
+            nacos:#不指定命名空间会注册默认的命名空间public ，不知道分组会注册默认组DEFAULT_GROUP
+              server-addr: localhost:8848 #nacos-server的地址
+              username: nacos #用户名
+              password: 1qazwsx #密码
+    boot启动类：
+        @EnableDiscoveryClient  //开启nacos服务发现客户端
+

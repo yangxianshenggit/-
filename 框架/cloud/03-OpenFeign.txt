@@ -18,7 +18,7 @@
     3、编写调用服务提供者接口，接口上标明要调用提供者的应用名称
         @FeignClient(value="provider-application-name",url="http://...",contextId="xxx"，path="xxx")
         value必填，ribbon会根据value去eureka查找服务提供者集群，
-        url指定访问的路径测试常用，
+        url指定访问的路径测试常用，不访问注册中心
         contextId避免面对同一个服务创建bean重名
         path定义当前FeignClient访问接口时的统一前缀
     4、接口中编写消费者要调用的方法签名,也就是服务提供者的控制层方法直接拷过来
@@ -62,7 +62,7 @@
                 spring.main.allow-bean-definition-overriding=true
                 这样允许同名的bean存在，但是不安全，不推荐。（来自网络，未测试）
             2、在openfeign高版本2.2.1中@FeignClient里面添加了新属性 ContextId，这样使用这个属性也是可以的，官网有这个例程。
-            3、官网提供的另外一种就是手动创建Feign客户端，如下就是
+            3、官网提供的另外一种就是手动创建Feign客户端
     4、针对传参是日期类型问题：
         使用feign直接传参Date，消费者和服务提供者会出现时间偏差(14小时)
         避免这个问题有以下几种方式：

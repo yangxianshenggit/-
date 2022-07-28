@@ -1,2 +1,3 @@
 localhost为什么能表示本机?
     在windows下的drivers\etc\hosts文件中指定了127.0.0.1和localhost的映射，linux一样
+exe文件时二进制文件（怎么读，看不懂），cmd是windows的批处理文件（可读）

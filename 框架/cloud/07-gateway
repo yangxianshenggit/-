@@ -1,0 +1,292 @@
+1、网关：参考图片 网关的概念.jpg
+    微服务的服务数量庞大，客户端请求访问消费者ip:port不好管理，针对所有服务提供一个统一的入口，就是网关
+    1、路由（路径）转发
+    2、安全控制，保护每个微服务不需要将ip、port暴漏
+    3、负载均衡
+    客户端访问网关，网关来访问微服务，（网关可以和注册中心整合，通过服务名 称找到目标的 ip：prot）
+    这样只需要使用服务名称即可访问微服务，可以实现负载均衡，可 以实现 token 拦截，权限验证，限流等操作
+2、项目中用的网关：
+    ① netflix 的zuul
+        zuul：1.0 , 2.0
+        zuul 的本质，一组过滤器，根据自定义的过滤器顺序来执行，本质就是 web 组件 web 三大组件（监听器 过滤器 servlet） 拦截 springmvc）
+        Zuul1.0 使用的是 BIO（Blocking IO） tomcat7.0 以前都是 BIO 性能一般
+        Zuul2.0 性能好 NIO   但cloud没有集成
+    ②cloud的gateway
+        gateway是cloud提供取代zuul的组件
+        在SpringCloud2.0 以上的版本中，没有对新版本的 zuul2.0 以上的最新高性能版本进行集成，仍然还是使用的 zuul1.x
+        SpringCloud Gateway 是基于 webFlux 框架实现的，而 webFlux 框架底层则使用了高性能的 Reactor(响应式编程)模式通信框架的 Netty
+3、网关的核心：一组过滤器，按照先后顺序来执行过滤器
+    web三大组件：servlet、listener、filter(过滤器)：一组过滤器可以指定先后顺序
+    springMVC的interceptor(拦截器)：主要是拦截进入controller的请求，像js、css的请求不会到这来
+    mvc请求：
+       客户端-->filter1-->filter2-->interceptor-->controller-->interceptor-->filter2-->filter1-->客户端
+   gateway核心逻辑： 路由转发 + 执行过滤器链
+4、gateway和nginx区别：参考图片 nginx(服务器级别)和gateway(项目级别)区别.jpg
+    nginx:      服务器级别    性能更好    转发量 1s/3~5w
+        Nginx 在做路由，负载均衡，限流之前，都有修改 nginx.conf 的配置文件，把需要负载均衡， 路由，限流的规则加在里面。
+    gateway:    项目级别      性能也不错  转发量 1s/1w
+        gateway 自动的负载均衡和路由，gateway 和 eureka 高度集成，实现 自动的路由，和 Ribbon 结合，实现了负载均衡（lb），gateway 也能轻易的实现限流和权 限验证。
+5、概念：
+    什么是路由:路径
+        Route(路由)（重点 和 eureka 结合做动态路由） 路由信息的组成： 由一个 ID、一个目的 URL、一组断言工厂、一组 Filter 组成。
+        如果路由断言为真，说明请求 URL 和配置路由匹配。
+    什么是断言？返回boolean类型的表达式
+    gateway中的filter:
+        Spring Cloud Gateway 中的 Filter 分为两种类型的 Filter，分别是 Gateway Filter 和 Global Filter。
+        过滤器 Filter 将会对请求和响应进行修改处理。
+        一个是针对某一个路由(路径)的 filter 对某一个接口做限流
+        一个是针对全局的 filter token ip 黑名单
+6、入门：
+    1、创建网关模块
+    2、pom依赖：注意gateway的很多组件要加响应式的依赖
+        springboot-web要排除tomcat相关依赖，mvc相关配置信息，因为gateway底层通过netty实现
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    3、编写路由：
+        1、yml配置路由配置：
+            spring:
+                cloud:
+                    gateway:
+                        enabled: true #默认支持gateway
+                        routes: #是一个list集合； 路由：一个 ID、一个目的 URL、一组断言工厂、一组 Filter 组成
+                            - id: user-center # 每个路由的唯一标识，保持唯一
+                              uri: http://localhost:9002 # uri：统一资源定位符  url：统一资源标识符
+                              predicates: #断言：匹配规则，只要请求路径匹配上了断言规则，请求就往uri转发，并且将路径带上
+                                - Path=/user/**
+        2、代码编写路由：
+            /**
+             * 代码路由，和yml不冲突,参考官网
+             * 如果uri后面跟了访问地址，那么请求路径和断言匹配后，断言会毁在拼接到uri后
+             * @param builder
+             * @return
+             */
+            @Bean
+            public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+                return builder.routes()
+                        .route("path_rote_guonei", r -> r.path("/guonei").uri("http://news.baidu.com/guonei"))
+                        .route("path_rote_guoji", r -> r.path("/guoji").uri("http://news.baidu.com/guoji"))
+                        .route("path_rote_tech", r -> r.path("/tech").uri("http://news.baidu.com/tech"))
+                        .route("path_rote_lady", r -> r.path("/lady").uri("http://news.baidu.com/lady"))
+                        .build();
+            }
+    4、编写启动类，直接启动进行测试
+
+7、分析问题：
+    1、如果同一个消费者服务做集群，网关怎么写路由？
+    2、一个服务下面好多路径，怎么写断言
+    3、uri直接写死怎么做负载均衡
+
+   解决方案：1、gateway和eureka结合做动态路由 2、一个服务的所有路径加前缀 3、lb://serviceName
+    微服务是只要知道服务的名字，根据名字去找，而直接写死就没有负载均衡的效果了
+    默认情况下 Gateway 会根据注册中心的服务列表，以注册中心上微服务名为路径创建动态路由进行转发，从而实现动态路由的功能
+    需要注意的是 uri 的协议为 lb（load Balance），表示启用 Gateway 的负载均衡功能。
+    lb://applicationName 是 spring cloud gateway 在微服务中自动为我们创建的负载均衡 uri
+8、动态路由和负载均衡的实现
+    修改笔记中第6点：添加eureka客户端依赖，添加eureka的yml配置，最后gateway的配置中开启动态路由
+    spring:
+      application:
+        name: test-gateway
+      cloud:
+        gateway:
+          enabled: true #默认支持gateway
+          routes: #设置路由，注意是数组，可以设置多个，按照 id 做隔离；
+                  #路由：一个 ID、一个目的 URL、一组断言工厂、一组 Filter 组成
+            - id: applicationName-route # 每个路由的唯一标识，保持唯一,一般是 应用名-route
+              uri: lb://applicationName #负载均衡协议lb   uri：统一资源定位符  url：统一资源标识符
+              predicates: #断言：匹配规则，只要请求路径匹配上了断言规则，请求就往uri转发，并且将路径带上
+                - Path=/preferName/** #每个微服务对外暴漏的接口的前缀保持统一，这样好控制
+          discovery:
+            locator: #定位
+              enabled: true #开启动态路由，通过应用名称找到服务的功能
+              lower-case-service-id: true #开启服务名称首字母小写驼峰功能匹配(eureka的都是大写，编写uri不方便)
+    通常我们编写请求网关的url：
+        http://网关ip:网关port/applicationName/... 断言默认不能作用在动态路由上
+     或  http://网关ip:网关port/...  会使用断言
+9、断言工厂：断言默认不能作用在动态路由上，实现一组匹配规则，让请求过来找到对应的 Route 进行处理
+    断言(predicate)：断言就是路由添加一些条件(丰富路由功能的) 通俗的说，断言就是一些布尔表达式，满足条件的返回 true，不满足的返回 false。
+    Gateway包括许多内置的断言工厂。 查看图片  gateway的断言工厂.png
+    所有这些断言都与 HTTP 请求的不同属性匹配。可以将多个断言可以组合使用 Gateway 创建对象时，
+    使用 RoutePredicateFactory 创建 Predicate 对象， Predicate 对象可以赋值给 Route。
+
+    例如:
+        predicates: #断言匹配
+            - Path=/info/** #和服务中的路径匹配,是正则匹配的模式
+            - After=2020-01-20T17:42:47.789-07:00[Asia/Shanghai] #此断言匹配发生在指定 日期时间之后的请求，ZonedDateTime dateTime=ZonedDateTime.now()获得
+            - Before=2020-06-18T21:26:26.711+08:00[Asia/Shanghai] #此断言匹配发生在指定 日期时间之前的请求
+            - Between=2020-06-18T21:26:26.711+08:00[Asia/Shanghai],2020-06-18T21:32:26.711+08:00[Asia/Shanghai] #此断言匹配发生在指定日期时间之间的请求
+            - Cookie=name,xiaobai #Cookie 路由断言工厂接受两个参数，Cookie 名称和 regexp(一 个 Java 正则表达式)。此断言匹配具有给定名称且其值与正则表达式匹配的 cookie
+            - Header=token,123456 #头路由断言工厂接受两个参数，头名称和 regexp(一个 Java 正 则表达式)。此断言与具有给定名称的头匹配，该头的值与正则表达式匹配。
+            - Host=**.bai*.com:* #主机路由断言工厂接受一个参数:主机名模式列表。该模式是一 个 ant 样式的模式。作为分隔符。此断言匹配与模式匹配的主机头
+            - Method=GET,POST #方法路由断言工厂接受一个方法参数，该参数是一个或多个参数: 要匹配的 HTTP 方法
+            - Query=username,cxs. #查询路由断言工厂接受两个参数:一个必需的 param 和一个 可选的 regexp(一个 Java 正则表达式)。
+            - RemoteAddr=192.168.1.1/24 #RemoteAddr 路由断言工厂接受一个源列表(最小大小 1)， 这些源是 cidr 符号(IPv4 或 IPv6)字符串，比如 192.168.1.1/24(其中 192.168.1.1 是 IP 地址，24 是子网掩码)。
+
+    权重路由：
+        使用场景：需要多版本服务控制的时候，需要对服务进行权重路由。
+        最常见的场景就是一个服务有两个版本V1,V2,在线上灰度的时候，如95的流量到V1,5的流量到V2
+       权重设置：同一个group, 权重数
+        spring:
+          cloud:
+            gateway:
+              routes:
+              - id: service1_v1
+                uri: http://localhost:8081/v1 或者正常的集群
+                predicates:
+                - Path=/test
+                - Weight=service1, 95
+              - id: service1_v2
+                uri: http://localhost:8081/v2
+                predicates:
+                - Path=/test
+                - Weight=service1, 5
+10、Filter过滤器：***
+    按生命周期分两种：
+        pre 在业务逻辑之前
+        post 在业务逻辑之后
+    按种类分两种：看官方文档
+        GatewayFilter:针对某一路由做过滤；如果需要使用全局路由，需要配置 DefaultFilters
+            场景：记录接口的访问次数、限流操作
+        GlobalFilter:全局过滤器，不需要配置路由，系统初始化作用到所有路由上
+            场景：黑名单校验、token校验、参数校验、统计请求次数、限流、ip、跨域本质(filter)
+    自定义全局过滤器：***
+        责任链设计模式：例如：过滤器链、mybatis二级缓存变种责任链模式
+        自定义全局过滤器类实现两个接口：
+            GlobalFilter：因gateway没有集成web，不能使用Filter接口，使用gateway自带的
+            Ordered：过滤器排序的接口
+        详情参考    全局过滤器的定义和常用方法： RequestGlobalFilter.java
+                   黑名单拦截:              BlackListGlobalFilter.java
+                   token校验：             TokenGlobalFilter.java
+                        使用到redis，加redis响应式依赖
+                        <dependency>
+                          <groupId>org.springframework.boot</groupId>
+                          <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+                        </dependency>
+    针对某一路由做过滤：***
+        什么是限流？  https://blog.csdn.net/budongfengqing/article/details/124437962
+            限流可以认为是服务降级的一种，限流就是限制系统的输入和输出流量已达到保护系统的目的。
+            一般来说系统的吞吐量是可以被测算的，为了保证系统的稳定运行，一旦达到的需要限制的阈值，就需要限制流量并采取一些措施以完成限制流量的目的。
+            阈值：在一个单位时间内允许的请求量。如 QPS 限制为10，说明 1 秒内最多接受 10 次请求。
+            拒绝策略：超过阈值的请求的拒绝策略，常见的拒绝策略有直接拒绝、排队等待等。
+        限流算法实现分类
+            限流的分类：
+                1）合法性验证限流：比如验证码、IP 黑名单等，这些手段可以有效的防止恶意攻击和爬虫采集；
+                2）容器限流：比如 Tomcat、Nginx 等限流手段
+                  其中 Tomcat 可以设置最大线程数（maxThreads），当并发超过最大线程数会排队等待执行；
+                  而Nginx提供了两种限流手段：一是控制速率，二是控制并发连接数；
+                3）服务端限流：比如我们在服务器端通过限流算法实现限流。
+            6种具体的实现限流的手段：
+                1）Tomcat 使用 maxThreads 来实现限流。
+                2）Nginx 的 limit_req_zone 和 burst 来实现速率限流。
+                3）Nginx 的 limit_conn_zone 和 limit_conn 两个指令控制并发连接的总数。
+                4）时间窗口算法借助 Redis 的有序集合可以实现。
+                5）漏桶算法可以使用 Redis-Cell 来实现。
+                6）令牌算法可以解决Google的guava包来实现。
+            限流按照规模来分类：
+                1）单节点限流：限流的方案仅适用于单节点规模，再大规模集群下不适用
+                2）分布式系统：适用于大规模集群限流，当然单节点也支持
+                需要注意的是借助Redis实现的限流方案可用于分布式系统，而guava实现的限流只能应用于单机环境。
+                如果觉得服务器端限流麻烦，可以在不改任何代码的情况下直接使用容器限流（Nginx或Tomcat），
+                但前提是能满足项目中的业务需求。
+
+            限流大致分为 两种：
+             1. IP 限流（5s 内同一个 ip 访问超过 3 次，则限制不让访问，过一段时间才可继续访问）
+             2. 请求量限流（只要在一段时间内(窗口期)，请求次数达到阀值，就直接拒绝后面来的访问了， 过一段时间才可以继续访问）（粒度可以细化到一个 api（url），一个服务）
+            Gateway 结合 redis 实现请求量限流：
+                Spring Cloud Gateway 已经内置了一个 RequestRateLimiterGatewayFilterFactory（请求速率限制器网关过滤器工厂），可以直接使用
+                以令牌桶算法入不敷出   参考 令牌桶限流模型.png
+                 过程：
+                1）、所有的请求在处理之前都需要拿到一个可用的令牌才会被处理；
+                2）、根据限流大小，设置按照一定的速率往桶里添加令牌；
+                3）、桶设置最大的放置令牌限制，当桶满时、新添加的令牌就被丢弃或者拒绝；
+                4）、请求达到后首先要获取令牌桶中的令牌，拿着令牌才可以进行其他的业务逻辑，处理完 业务逻辑之后，将令牌直接删除；
+                5）、令牌桶有最低限额，当桶中的令牌达到最低限额的时候，请求处理完之后将不会删除令牌，以此保证足够的限流；
+            yml配置：
+                在某个路由下配置：
+                filters: # gatewayFilter类型配置
+                   - name: RequestRateLimiter  #自定义或gateway定义的过滤器名称
+                     args: #过滤器参数
+                       key-resolver: '#{@hostAddrKeyResolver}' #通过spel表达式取ioc容器中的bean，配置类中的@Bean的bean名称默认方法名
+                       redis-rate-limiter.replenishRate: 1 #生成令牌的速度
+                       redis-rate-limiter.burstCapacity: 3 #桶容量
+            配置类参考   RequestRateLimiterConfig.java
+            测试：请求路径不能带服务名称，否则断言或gatewayFilter不生效
+            浏览器会报HTTP ERROR 429:请求过多
+
+11、跨域：
+    同源策略是一种约定，它是浏览器最核心也最基本的安全功能，如果缺少了同源策略，则浏览器的正常功能可能都会受到影响。
+    可以说Web是构建在同源策略基础之上的，浏览器只是针对同源策略的一种实现。它是一个安全策略。所有支持JavaScript的浏览器都会使用这个策略
+    同源策略存在的意义：
+        非同源下的 cookie 等隐私数据可以被随意获取
+        非同源下的 DOM 可以的随意操作
+        ajax 可以任意请求的话，用户的各种隐私肯定会泄露，对用户造成不同程度的损失
+    同源策略的限制范围
+        不能获取不同源的 cookie，LocalStorage 和 indexDB
+        不能获取不同源的 DOM()
+        不能发送不同源的 ajax 请求 （可以向不同源的服务器发起请求，但是返回的数据会被浏览器拦截）
+    产生的原因：
+        因动静分离部署项目，前端和后端可能会部署在不同的服务器上或者同一台服务器运行在不同端口上，
+        这会导致同源策略前后端部分功能无法交互
+    什么是跨域
+        当一个请求url的协议,域名,端口三者之间任意一个与当前的url不同都即为跨域
+    前后端都可以解决跨域问题
+        因为网关是微服务的边缘 所有的请求都要走网关 跨域的配置只需要写在网关即可
+
+    yml配置解决：
+    spring:
+        cloud:
+            gateway:
+              globalcors:
+                corsConfigurations:
+                  '[/**]': #针对那些路径
+                    allowedHeaders: '*'
+                    allowedMethods: '*'
+                    allowedOrigins: '*'
+                    allowCredentials: true #这个是可以携带 cookie
+
+    配置类解决：
+            @Bean
+            public CorsWebFilter corsFilter() {
+                CorsConfiguration config = new CorsConfiguration();
+                config.addAllowedMethod("*");
+                config.addAllowedOrigin("*");
+                config.addAllowedHeader("*");
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource(new PathPatternParser());
+                source.registerCorsConfiguration("/**", config);
+                return new CorsWebFilter(source);
+            }
+12、总结和面试
+    1. 你们网关用的什么 ? Gateway zuul
+    2. 你们网关里面写什么代码？
+        跨域，路由（动态路由，负载均衡）ip 黑名单拦截，Token 的校验，对请求进行过滤（请求 参数校验）
+        对响应做处理（状态码，响应头） 熔断 限流
+        微服务的网关，可以很好地将具体的服务和浏览器隔离开，只暴露网关的地址给到浏览器 在微服务网关中，
+        可以很好的实现校验认证，负载均衡（lb），黑名单拦截，限流等。
+    3. Gateway 和 zuul 的区别
+       Zuul 也是 web 网关，本质上就是一组过滤器，按照定义的顺序，来执行过滤操作
+       二者的区别：
+            1. 两者均是 web 网关，处理的是 http 请求
+            2. Gateway 是 springcloud 官方的组件，zuul 则是 netflix 的产品 springcloud，netflix ，alibaba（nacos，sentinel，dubbo zk，seata，rocketmq）
+            3. gateway 在 spring 的支持下，内部实现了限流、负载均衡等，扩展性也更强，但同时也 限制了仅适合于 Spring Cloud 套件。而 zuul 则可以扩展至其他微服务框架中，其内部没有 实现限流、负载均衡等。
+            4. Gateway（Netty NIO）很好的支持异步(spring5.x ,webFlux 响应式编程默认是异步的)， 而 zuul1.0 仅支持同步 BIO zuul2.0 以后也支持异步了
+    4. 关于限流，面试不会直接问，而是间接来问
+        问 不卖超 比如：如果在抢购过程中，用户量请求非常大，怎么确保商品不会卖超
+        Redis 单线程 （IO 为什么快，因为我们现在的处理器是多核心数的，redis 底层使用的是 IO 的多路复用）
+        一般人只会在意商品卖超，而忘记了限流的重要性
+        Mq（限流 削峰，异步，解耦合）
+
+
+
+

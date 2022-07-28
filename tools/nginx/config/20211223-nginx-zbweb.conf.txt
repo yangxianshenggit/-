@@ -1,0 +1,341 @@
+# user  nginx apps;
+worker_processes  48;
+
+worker_rlimit_nofile 204800 ;
+
+error_log  /log/nginx/error.log;
+
+pid         sbin/nginx.pid;
+events {
+    worker_connections 204800 ;
+}
+
+http {
+    server_tokens off;
+    include      mime.types;
+
+    default_type application/octet-stream;
+
+    access_log /log/nginx/access.log;
+    error_log  /log/nginx/error.log;
+
+    log_format    f_nginx
+                          '$remote_addr:$remote_port $server_addr $server_protocol $request_method $server_port $bytes_sent '
+                          '$uri ?$query_string $status $request_time [$time_local] $http_referer $http_user_agent $http_x_forwarded_for';
+
+    sendfile       on;
+    tcp_nopush     on;
+    tcp_nodelay    on;
+
+    keepalive_timeout  60;
+    open_file_cache max=204800 inactive=20s;
+    open_file_cache_min_uses 1;
+    open_file_cache_valid 30s;
+
+    types_hash_max_size 20480;
+
+    server_names_hash_bucket_size 1280;
+    client_header_buffer_size 4k;
+    client_header_timeout 60000;
+    client_body_timeout 60000;
+    client_body_buffer_size   256k;
+    client_max_body_size      5000m;
+    large_client_header_buffers 16 5120k;
+
+
+    #gzip  on;
+    #gzip_min_length 1k;          #��Сѹ���ļ���С
+    #gzip_buffers     16 32k;
+    #gzip_comp_level  2;          #ѹ���ȼ�
+    #gzip_proxied     any;
+    #gzip_types       text/plain application/x-javascript text/css application/xml text/javascript;
+    #gzip_vary        on;
+
+    #proxy_next_upstream http_500 http_502 http_503 http_504 error timeout;
+    #proxy_connect_timeout 60000;
+    #proxy_send_timeout 60000;
+    #proxy_read_timeout 60000;
+    #proxy_buffer_size 6400k;
+    #proxy_buffers 4 6400k;
+    #proxy_busy_buffers_size 12800k;
+    #proxy_temp_file_write_size 12800k;
+    #proxy_ignore_client_abort on;
+  # # limit_zone crawler $binary_remote_addr 10m;
+   # limit_zone ltone $binary_remote_addr 10m;
+
+    upstream hxserver{
+        #ip_hash;
+        server 172.20.17.242:10090 weight=100 max_fails=0 fail_timeout=10s;
+   #     server 172.16.17.11:9080 max_fails=0 fail_timeout=10s;
+   #     server 172.16.17.11:9081 max_fails=0 fail_timeout=10s;
+     #   server 172.16.17.12:9080 max_fails=0 fail_timeout=10s;
+      #:  server 172.16.17.12:9081 max_fails=0 fail_timeout=10s;
+        keepalive 20000;
+    }
+
+    upstream hxfiles{
+        #ip_hash;
+        server 106.127.4.121:10080 weight=100;
+        server 106.127.4.122:10080 weight=100;
+    }
+	#�������ã����ӵ�����upstream�ڵ����
+	upstream hxoauth {
+        server 172.16.100.24:9081 max_fails=0 fail_timeout=10s;
+        keepalive 20000;
+    }
+
+   server {
+        listen      10080;
+       # server_name app.creditcard.hxb.com.cn ;
+        charset utf-8;
+
+        access_log  /log/nginx/10080/access-10080.log f_nginx;
+        error_log   /log/nginx/10080/error-10080.log;
+
+        sendfile on;
+        tcp_nopush on;
+        expires 30d;
+
+	
+        location /hx-card {
+            proxy_pass http://hxserver;
+            #proxy_redirect off;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_connect_timeout 75;
+            proxy_send_timeout 300;
+            proxy_read_timeout 300;
+            proxy_buffer_size 64k;
+            proxy_buffers 4 64k;
+            proxy_busy_buffers_size 128k;
+            proxy_temp_file_write_size 128k;
+            proxy_ignore_client_abort on;
+            index  index.html index.htm;
+          
+        }
+location /hx-front {
+	proxy_pass http://hxserver/hx-front/;
+	proxy_redirect off;
+	proxy_set_header Host $http_host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	index  index.html index.htm;
+}
+	#������10080�˿ڽڵ�������
+	location /open {
+            proxy_pass http://hxoauth/hx-oauth;
+            proxy_set_header Host 'app.creditcard.hxb.com.cn';
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            add_header Access-Control-Allow-Origin *;
+            proxy_connect_timeout  75;
+            proxy_send_timeout    300;
+            proxy_read_timeout    300;
+            proxy_buffer_size     64k;
+            proxy_buffers       4       64k;
+            proxy_busy_buffers_size    128k;
+            proxy_temp_file_write_size 128k;
+            proxy_ignore_client_abort  on;
+            index index.html index.htm;
+            add_header Access-Control-Allow-Headers accept,origin,content-type,iskeepsecret,isallsecret;
+        }
+        location / {
+            root   /data/iguard/web/share/;
+            index  share.html index.html index.htm;
+        }
+        location /messageLink {
+            root   /data/iguard/web/;
+            index  index.html index.htm;
+        }
+        location /privacy{
+            root /data/iguard/web/;
+            index privacy.txt;
+        }
+
+	location /ysfBindCard {
+            root   /data/iguard/web/;
+            index  index.html index.htm;
+        }
+
+        location /flashpay {
+            root /data/iguard/web/;
+            index index.html index.htm;
+        }
+          location /idcardUpload {
+            root   /data/iguard/web/h5func/;
+            index  idcardUpload.html index.html index.htm;
+        }
+        location /idcardUpload/error/ {
+            root   /data/iguard/web/h5func/;
+            index  note.html index.htm;
+        }
+
+	location /onlineUpload {
+            root   /data/iguard/web/;
+            index  index.html index.htm;
+        }
+
+        location ^~/h5pub {
+            root   /data/iguard/web/;
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+        }
+        location ^~/h5func{
+            root /data/iguard/web/;
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+        }
+        location ^~/shareH5 {
+            root /data/iguard/web/;
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Credentials' 'true';
+        }
+        
+        location ^~/guidanceDown/ {
+            root /data/iguard/web/;
+            index index.html index.htm;
+        }
+        
+        location ^~/h5doc{
+            root /data/iguard/web/;
+            index  index.html index.htm;
+        }
+
+        location /web{
+            root /data/iguard;
+            index index.html;
+        }
+
+        location /apps/group1/M00{
+            #proxy_pass http://hxfiles/data;
+
+			alias /data/files/storage/data;            
+
+			if ( $query_string ~ "download=true$" ) {
+                add_header Content-Disposition "attachment; filename=$request_filename";
+            }
+            proxy_redirect off;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            index  index.html index.htm;
+        }
+		
+		location /app/apps/group1/M00{
+			alias /data/files/storage/data;            
+        }
+        
+        location /app/group1/M00{
+            #proxy_pass http://hxfiles/data;
+
+	    alias /data/files/storage/data;            
+
+			if ( $query_string ~ "download=true$" ) {
+                add_header Content-Disposition "attachment; filename=$request_filename";
+            }
+            proxy_redirect off;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            index  index.html index.htm;
+        }
+        
+        location /imgs/group1/M00{
+         #   proxy_pass http://hxfiles/data;
+            alias /data/files/storage/data;
+            if ( $query_string ~ "download=true$" ) {
+                add_header Content-Disposition "attachment; filename=$request_filename";
+            }
+            proxy_redirect off;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            index  index.html index.htm;
+        }
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+	location /Mbas {
+	    proxy_pass http://172.20.17.242:50080/Mbas;
+    	    index index.html;
+ 	}
+
+   }
+server {
+        listen	10060;
+        server_name		www.123.com;
+
+        location / {
+            root	html;
+            index	index.html index.htm;
+        }       
+
+        charset utf-8;
+
+        access_log  /log/nginx/10060/access-10060.log f_nginx;
+        error_log   /log/nginx/10060/error-10060.log;
+                
+        location /service {
+            proxy_pass http://hxserver/hx-card/service/index.json;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+}
+		
+server {
+        listen	10059;
+        server_name		www.123.com;
+
+        location / {
+            root	html;
+            index	index.html index.htm;
+        }       
+
+        charset utf-8;
+
+        access_log	/log/nginx/10059/access-10059.log f_nginx;
+        error_log	/log/nginx/10059/error-10059.log;
+                
+        location /service {
+            proxy_pass http://hxserver/hx-card/service/index.json;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_connect_timeout  75;
+            proxy_send_timeout    300;
+            proxy_read_timeout    300;
+            proxy_buffer_size     64k;
+            proxy_buffers       4       64k;
+            proxy_busy_buffers_size    128k;
+            proxy_temp_file_write_size 128k;
+            proxy_ignore_client_abort  on;
+            index index.html index.htm;
+        }
+}
+server {
+        listen       10079;
+        charset utf-8;
+
+        access_log  /log/nginx/10079/access-10079.log f_nginx;
+        error_log   /log/nginx/10079/error-10079.log;
+
+
+        location /hx-card {
+            proxy_pass http://hxserver/hx-card/;
+            proxy_redirect off;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            index  index.html index.htm;
+
+        }
+  #���ô���ҳ��
+          error_page   500 502 503 504  /50x.html;
+          location = /50x.html {
+          root   html;
+                                }
+        }
+}
