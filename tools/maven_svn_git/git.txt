@@ -1,11 +1,43 @@
-git:版本控制工具
+什么是git:版本控制工具
 	主要概念
 	　repository：仓库／工作区	磁盘的文件夹
 	　	.git：版本库
 	　		stage：暂存区
 			master：git自动创建的主分支
 			HEAD：指针，指向主分支
+git安装成功后：
+    git bash:unix与linux风格命令行
+    git cmd:windows风格命令行
+    git gui:图形界面的git
+git常用命令：
+    查看配置：git config -l
+    系统配置：git config --system --list
+        对应文件git/etc/gitconfig
+    用户自行配置：git config --global --list
+        对应文件C:\Users\windows当前登录的用户\.gitconfig
+        用户名邮箱必须配，这个是安装后必须做的，代表每次提交谁提交的
+     **   git config --global user.name "xxx"
+     **   git config --global user.email "xxx"
+git理论：
+    工作区域：
+        本地：
+            工作区（磁盘的文件夹）：Working Directory/repository
+                .git：版本库
+                    暂存区:stage/index
+                    master：git自动创建的主分支，本地仓库
+                    HEAD：指针，默认指向主分支
+        远程:托管代码
+            Remote Directory
+    工作流程：
+        1、将工作区的文件添加到暂存区：add
+        2、将暂存区的文件提交到主分支(本地仓库):commit
+        3、将本地的文件托管到远程: push
+        4、远程的文件更新(拉)本地： pull
+           本地首次拉去则:clone
+        5、master分支上的文件回退到暂存区：reset
+        6、暂存区回退到工作空间：checkout
 git操作：
+    git创建本地仓库两种方式：1、新建文件夹，git init创建.git    2、从远程克隆 git clone [url]
 	1、首先创建工作区：在磁盘的某个位置新建文件夹
 	2、在工作区创建版本库：
 			在文件夹内右击选中git bash here,打开git命令窗口，输入git init
@@ -40,6 +72,3 @@ git操作：
 		切换到master，然后合并分支	git merge 分支名称
 		
 		!!!注意：当在分支上进行重置，合并主分支后，主分支上也会进行重置操作
-		
-		
-		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
