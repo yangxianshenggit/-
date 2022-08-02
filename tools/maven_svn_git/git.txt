@@ -28,14 +28,30 @@ git理论：
                     HEAD：指针，默认指向主分支
         远程:托管代码
             Remote Directory
-    工作流程：
-        1、将工作区的文件添加到暂存区：add
-        2、将暂存区的文件提交到主分支(本地仓库):commit
+    本地工作流程：
+        创建本地仓库
+            两种方式：a、新建文件夹，git init创建.git    b、从远程克隆 git clone [url]
+        1、将工作区的所有文件添加到暂存区：git add ./[filename]
+           查看[该]文件状态： git status [filename]
+        2、将暂存区的所有文件提交到主分支(本地仓库):git commit -m "注释"
         3、将本地的文件托管到远程: push
         4、远程的文件更新(拉)本地： pull
            本地首次拉去则:clone
-        5、master分支上的文件回退到暂存区：reset
-        6、暂存区回退到工作空间：checkout
+    idea+本地+远程流程：
+        git使用https协议，每次pull, push都要输入密码，相当的烦。
+        使用git协议，然后使用ssh密钥。这样可以省去每次都输密码。
+        大概需要三个步骤：
+        一、本地生成密钥对；
+            在windows当前用户目录下的./ssh目录下生成密钥文件(一个私钥一个公钥)
+            在/ssh目录下打开git bash窗口输入
+                ssh-keygen -t rsa -C "your_email@example.com" -f "文件名"
+                         代码参数含义：
+                         -t 指定密钥类型，默认是 rsa ，可以省略。
+                         -C 设置注释文字，比如邮箱。
+                         -f 指定密钥文件存储文件名。
+        二、设置github上的公钥；
+
+        三、修改git的remote url为git协议。
 git操作：
     git创建本地仓库两种方式：1、新建文件夹，git init创建.git    2、从远程克隆 git clone [url]
 	1、首先创建工作区：在磁盘的某个位置新建文件夹
