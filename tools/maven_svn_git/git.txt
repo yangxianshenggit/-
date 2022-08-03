@@ -1,10 +1,15 @@
-什么是git:版本控制工具
-	主要概念
-	　repository：仓库／工作区	磁盘的文件夹
-	　	.git：版本库
-	　		stage：暂存区
-			master：git自动创建的主分支
-			HEAD：指针，指向主分支
+什么是git:
+    版本控制工具
+git理论：
+    工作区域：
+        本地：
+            工作区（磁盘的文件夹）：Working Directory
+                .git：版本库
+                    暂存区:stage/index
+                    master：git自动创建的主分支，本地仓库
+                    HEAD：指针，默认指向主分支
+        远程:托管代码
+            Remote Directory
 git安装成功后：
     git bash:unix与linux风格命令行
     git cmd:windows风格命令行
@@ -18,73 +23,90 @@ git常用命令：
         用户名邮箱必须配，这个是安装后必须做的，代表每次提交谁提交的
      **   git config --global user.name "xxx"
      **   git config --global user.email "xxx"
-git理论：
-    工作区域：
-        本地：
-            工作区（磁盘的文件夹）：Working Directory/repository
-                .git：版本库
-                    暂存区:stage/index
-                    master：git自动创建的主分支，本地仓库
-                    HEAD：指针，默认指向主分支
-        远程:托管代码
-            Remote Directory
-    本地工作流程：
+
+git的本地仓库工作流程：
         创建本地仓库
-            两种方式：a、新建文件夹，git init创建.git    b、从远程克隆 git clone [url]
+            两种方式：
+            a、新建文件夹，git init创建.git
+            b、从远程克隆 git clone [url]
         1、将工作区的所有文件添加到暂存区：git add ./[filename]
            查看[该]文件状态： git status [filename]
         2、将暂存区的所有文件提交到主分支(本地仓库):git commit -m "注释"
+          ***只负责把暂存区的修改提交了
         3、将本地的文件托管到远程: push
         4、远程的文件更新(拉)本地： pull
            本地首次拉去则:clone
-    idea+本地+远程流程：
-        git使用https协议，每次pull, push都要输入密码，相当的烦。
-        使用git协议，然后使用ssh密钥。这样可以省去每次都输密码。
-        大概需要三个步骤：
-        一、本地生成密钥对；
-            在windows当前用户目录下的./ssh目录下生成密钥文件(一个私钥一个公钥)
-            在/ssh目录下打开git bash窗口输入
-                ssh-keygen -t rsa -C "your_email@example.com" -f "文件名"
-                         代码参数含义：
-                         -t 指定密钥类型，默认是 rsa ，可以省略。
-                         -C 设置注释文字，比如邮箱。
-                         -f 指定密钥文件存储文件名。
-        二、设置github上的公钥；
+        5、在工作区的文件修改错了要恢复修改前的
+           git checkout [fileName]
+        6、对比工作区修改的文件(未提交暂存区)和版本库文件的差异
+           git diff [filename]
+        7、查看文件状态
+            git status [fileName]
+            更新-->暂存区：未提交-->没有什么可提交工作树干静：已提交本地仓库
+        8、git log：查看提交记录
+            git log
+             	commit e45c5c80d08ea6726d8016664ea316f2aba488b9 	提交的版本号
+             	Author: yangshuai <598813791@qq.com>		操作者
+             	Date:   Tue Jun 14 10:28:23 2022 +0800		时间
+             git log <--pretty=oneline>：一行显示
+        9、版本回退：工作区到分支上都回退了
+            git reset --hard HEAD^ //HEAD表示当前版本，则HEAD^表示上一个版本，那么上上版本就是HEAD^^
+           想要回到最新的版本，还是使用 git reset 命令
+            git reset --hard 版本号 //这里不能用HEAD而必须使用 commit id ，因为最新版本在之前返回时已经被删除
+        10、文件添加到暂存区，这时想撤销暂存区的某个文件或者撤销整个暂存区所有文件
+            git reset -- [fileName/.]
+            这时暂存区的文件已经撤销，但工作区的还没改变
+            工作区的也想撤销文件
+            git checkout [filename]
+        11、想要删除某个文件
+            1、暂存区删除某个文件,并提交分支
+            git rm filename
+            git commit -m "remove filename"
+            2、暂存区删除文件，但删错了，从版本库恢复
+            git rm filename
+            git reset --hard filename
+git和github+idea
+        1、git使用https协议，每次pull, push都要输入密码，相当的烦。
+            使用ssh密钥。这样可以省去每次都输密码。
+            大概需要三个步骤：
+            一、本地生成密钥对；
+                在windows当前用户目录下的./ssh目录下生成密钥文件(一个私钥一个公钥)
+                在/ssh目录下打开git bash窗口输入
+                    ssh-keygen -t rsa
+                             代码参数含义：
+                             -t 指定密钥类型，默认是 rsa ，可以省略。
 
-        三、修改git的remote url为git协议。
-git操作：
-    git创建本地仓库两种方式：1、新建文件夹，git init创建.git    2、从远程克隆 git clone [url]
-	1、首先创建工作区：在磁盘的某个位置新建文件夹
-	2、在工作区创建版本库：
-			在文件夹内右击选中git bash here,打开git命令窗口，输入git init
-			此时当前工作区内隐藏文件.git为版本库
-	3、新建文件至工作区，也可以在git窗口用linux命令操作
-	4、将文件添加到stage(暂存区)：git add <fileName>
-	5、将文件合并到主分支master上:git commit -m <message:注解，说明>
-		此时HEAD指针指向新提交的版本
-	6、修改文件后，需要再次添加至暂存区，然后提交主分支
-	7、查看git状态:git status
-	8、查看git日志：
-			git log 
-				commit e45c5c80d08ea6726d8016664ea316f2aba488b9 	提交的版本号
-				Author: yangshuai <598813791@qq.com>		操作者
-				Date:   Tue Jun 14 10:28:23 2022 +0800		时间
+            二、设置github上的公钥；
+                在github上 setting-->SSH and GPG keys-->SSH keys
 
-			git log <--pretty=oneline>：一行显示
-	9、查看文件修改后未添加暂存区和已提交到master的差异：git diff <fileName>
-	10、重置(reset)到之前几个版本:git reset --hard 版本号前几位
-	11、查看文件操作过几次:git reflog <fileName>
-	12、修改撤销、删除
-		1、当你改乱了工作区某个文件的内容，想直接丢弃工作区的修改时，用命令git checkout -- file
-		2、当你不但改乱了工作区某个文件的内容，还添加到了暂存区时，想丢弃修改，分两步，第一步用命令git reset HEAD <file>，就回到了场景1，第二步按场景1操作。
-		3、已经提交了不合适的修改到版本库时，想要撤销本次提交，参考版本回退一节
-		4、彻底删除一个文件
-			git rm  file  
-			git commit
-	13、创建分支：git branch 分支名称
-		查看所有分支:git branch 
-		切换分支:git switch 分支名称
-		当分支上修改文件添加暂存区并提交后，
-		切换到master，然后合并分支	git merge 分支名称
-		
-		!!!注意：当在分支上进行重置，合并主分支后，主分支上也会进行重置操作
+            三、打开git bash窗口输入 git config --global http.sslVerify “false”
+             设置http不验证，也就是push不用登录
+        【2、github/gitlab构建远程仓库】
+        3、两种情况：
+            1）idea从远程clone项目
+                a、命令栏的vcs-->git from version control-->repository url
+                    直接clone到本地，idea会新建项目
+                b、本地新建文件夹，git bash-->git clone url
+                  然后idea新建工作空间，把新建文件夹内的文件都拷贝下来，重启idea
+            2）本地构建项目推到远程仓库
+                 git push -u 远程仓库名 master
+                 git push 命令，就是把当前分支 master 推送到远程。
+                 因为远程库是空的，所以我们在第一次推送 master 分支时，要加上 -u 参数，Git不但会把本地的 master 分支内容推送的远程新的 master 分支，
+                 还会把本地的 master 分支和远程的 master 分支关联起来
+        4、添加、修改、删除文件进行git操作
+           鼠标右键在git中操作或左下角terminal输入命令行
+           文件颜色变化：红--绿--蓝
+	    5、 创建分支：git branch 分支名称
+            查看分支:git branch
+            创建并切换分支：git checkout -b 分支名称
+            切换分支:git switch/checkout 分支名称
+            当分支上修改文件添加暂存区并提交后，
+            切换分支，合并指定分支到当前分支上	git merge 分支名称
+            从git上取所有分支 git Fetch
+            删除分支：git branch –d name
+
+            !!!注意：当在分支上进行重置，合并主分支后，主分支上也会进行重置操作
+        6、冲突解决方式：
+            1、先拉取，在本地解决
+            2、强制合并在解决
+        7、git
