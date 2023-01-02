@@ -4,3 +4,6 @@ exe文件时二进制文件（怎么读，看不懂），cmd是windows的批处�
 查看被占用端口对应的 PID：netstat -aon|findstr "8081"
 查看指定 PID 的进程：tasklist|findstr "9088"
 强制（/F参数）杀死 pid 为 9088 的所有进程包括子进程（/T参数）：taskkill /T /F /PID 9088
+
+本地编辑域名和ip映射？
+win+r: drivers 找到hosts文件，编辑ip和域名映射

@@ -39,6 +39,7 @@ client:客户端
 server：服务端
 Connector：连接
 load：负载、装载
+balance: 均衡;平衡;
 Attribute：属性
 redirect:重定向
 dispatcher:转发分发
@@ -54,3 +55,38 @@ product：生产
 expression:表达式
 singletion:单例
 proxy:代理
+-----------------eureka
+artifact:工件
+defaultZone:默认区域
+enable:使可行;使实现
+program arguments: 程序参数
+configuration: 配置
+instance： 例子;事例;实例
+eviction：驱逐;驱赶
+interval：间隔;间隙;间歇;
+timer：时计;计时器;跑表;定时器
+ms: 毫秒 1秒=1000ms
+renewal：续订，有效期延长
+percent：百分比，百分之...
+threshold：门槛;门口;阈
+hostname：主机名
+prefer：更喜欢;较喜欢;
+address：地址
+lease:租赁;租约
+renewal:有效期延长，展期，续订
+seconds:秒
+expiration：到期;期满;截止;
+duration：期间;持续时间
+fetch：取来;拿来;
+discovery:发现
+deprecated:过时
+inject:注射;添加，增加
+preDestory:预销毁，生命周期
+
+------------ribbon
+provider: 供应者;提供者
+consumer: 消费者
+roundRobin:轮询
+
+-------------se
+absolute: 完全的、绝对的 absolute path绝对路径

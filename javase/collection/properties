@@ -1,0 +1,16 @@
+1、properties:
+    Map集合，k、v都是String类型。
+2、java规范要求：属性配置文件最好以properties结尾，但不是必须的
+3、设计理念：经常发生改变的数据，可以写到一个文件中，程序动态获取。
+    只要文件发生改变，代码不需要改动也不用重新编译，服务器也不用重启，接可以拿到动态信息
+
+    以上机制的这种文件称为配置文件，并且格式为
+    key1=value1
+    key2=value2
+    key重复value覆盖
+    在属性配置文件中#是注释
+4、将配置文件信息装载到properties中
+    IO流读取文件
+    Properties p=new Properties();
+    p.load(Reader in);或 p.load(InputStream in);
+    String value1=p.get("key1")

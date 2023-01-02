@@ -1,0 +1,115 @@
+1、close()throw IOException;;
+    流都实现了java.io.closeable接口，都是可关闭的，都有close()方法。
+    流毕竟是一个管道，这个是内存和硬盘之间的通道，用完之后一定要关闭，在finally语句块中关闭(前提：确保流不是空)
+    不然会耗费(占用)很多资源。养成好习惯，用完流一定要关闭。
+2、flush()throw IOException;;
+    输出流都实现了java.io.Flushable接口,都是可刷新的,都有flush()方法。
+    养成一个好习惯，输出流在最终输出之后，一定要记得flush()
+    刷新一下。这个刷新表示将通道/管道当中剩余未输出的数据
+    强行输出完(清空管道!)刷新的作用就是清空管道。
+    注意:如果没有flush()可能会导致丢失数据。
+3、FileInputStream常用方法
+    FileInputStream(String path)throw FileNotFoundException;
+    FileInputStream(File file)throw FileNotFoundException;
+     构造方法
+     参数：absolute path绝对路径
+          相对路径：从当前所在位置为起点开始找，idea默认当前路径是project的根
+          当前系统用户的家：System.getProperties("user.home");
+    int read()throw IOException;
+         一次读取一个字节，返回读到的字节本身，没有了则返回-1
+         调用一次指针向前移一个字节
+    int read(byte[]b)throw IOException;
+         一次读取byte数组长度的字节，读到byte数组中，返回读到的字节数量，没有了则返回-1
+         倒数第二次读取的数量若小于byte数组长度，则byte数组为本次读取的数据+上次读取的未被覆盖的数据
+
+         byte数组转字符串
+             new String(byte[]);将byte数组中所有的字节转为字符串
+             new String(byte[],int offset,int length);从byte数组的offset位置，length长度的字节转换为字符串
+    int available();
+         返回剩余没有读到的字节数；
+         场景：读取的百分比，进度条；
+             也可以只接读一次，但这种方法不适合太大文件，因为byte数组不能太大：new byte[input.available()];
+    long skip(long n);
+         跳过几个字节不读
+4、FileOutputStream 常用方法
+     FileOutputStream(String name)throw FileNotFoundException;
+          构造方法
+          参数：absolute path绝对路径
+               相对路径：从当前所在位置为起点开始找，idea默认当前路径是project的根
+               当前系统用户的家：System.getProperties("user.home");
+          注意：文件不存在会自动创建，但不会创建层级目录，若层级目录不存在会报FileNotFoundException
+               这种方式会将源文件清空，然后重新写入。
+     FileOutputStream(String name,boolean append)throw FileNotFoundException;
+               构造方法
+               参数：
+                    append:
+                        true:源文件追加写入
+                        false:源文件清空写入
+               注意：文件不存在会自动创建，但不会创建层级目录，若层级目录不存在会报错
+     FileOutputStream(File file) throw FileNotFoundException;
+
+     write(byte[])throw IOException;;
+           将byte数组全部写出
+     write(byte[]，int offset,int length)throw IOException;;
+                 从byte数组的offset位置，length长度的字节写出
+     字符串转byte数组：java.lang.String
+        public bytes[] getBytes();
+5、FileReader常用方法
+    FileReader(String name)throw FileNotFountException
+        构造方法，创建一个字符流
+    int read()throw IOException
+        一次读取一个字符，返回字符的码值，没有则返回-1
+    int read(char[])throw IOException
+        一次读取字符数组长度的字符，返回读取字符的数量，读到的字符存储在字符数组中，没有则返回-1
+    long skip(long n)
+        跳过几个字符不读
+6、FileWriter常用方法
+    FileWriter(String name)throw FileNotFountException
+    FileWriter(String name,boolean append)throw FileNotFountException
+
+    void write(char c)throw IOException
+    void write(char[])throw IOException
+    void write(char[],int offset,int length)throw IOException
+        写入char数组的一部分
+    void write(String str)throw IOException
+        把字符串写入
+    void write(String str,int offset,int length)throw IOException
+
+7、BufferedReader常用方法
+    BufferedReader(Reader in)throw FileNotFoundException
+    BufferedReader(Reader in,int sz)throw FileNotFoundException
+    传入一个节点流，封装成包装流
+    String readLine() throw IOException
+    一次读一行，不带换行符；读完返回null
+    close() throw IOException
+    关闭处理流，会自动关闭节点流
+
+8、InputStreamReader 常用方法
+    InputStreamReader(InputStream in)throw FileNotFoundException
+    将字节流转为字符流
+9、BufferedWriter 常用方法
+    BufferedWriter(Writer out)throw FileNotFoundException
+    BufferedWriter(Writer out,int sz)throw FileNotFoundException
+    传入一个节点流，封装成包装流,sz 自带缓冲区char数组的长度
+    void write(String str) throw IOException;
+    写出字符串
+    newLine();
+    换行
+10、OutputStreamWriter 常用方法
+    OutputStreamWriter(Writer out)throw FileNotFoundException
+    将字节流转为字符流
+11、PrintStream 标准输出流
+    System类中有一个属性out 就是标准输出流，可以通过System.setOut修改标准输出流的输出方向
+    这实际上就是日志框架的原理
+    方法重载：
+        println(byte b);....
+12、DataInputStream 和 DataOutputStream
+    数据专属流，向文件存储基本数据类型和byte数组，并且把类型也存储。
+    DataOutputStream写入的数据只能 DataInputStream 读取，并且存储顺序是什么顺序，读的顺序就是什么
+    writeBytes(String str);//底层将str转为char字符强转byte类型依次次写入
+    应用readByte()读取str长度次数，并转为char字符，封装到char数组，最后将char数组转为string类型
+13、ObjectInputStream 和 ObjectOutputStream
+    一个文件只能存一个序列化对象，因此存多个对象要把对象放到集合中,且会把序列化版本号写入文件
+    对象必须实现java.io.Serialize接口
+    Object readObject()
+    void writeObject(Object o)

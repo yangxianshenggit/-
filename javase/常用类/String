@@ -1,0 +1,10 @@
+1、byte 数组转字符串
+    new String(byte [])
+    new String(byte[],int offset,int length)
+2、字符串转byte数组
+    byte[] getBytes()
+3、char 数组转字符串
+    new String(char [])
+    new String(char[],int offset,int length)
+2、字符串转char数组
+    char[] getChars()

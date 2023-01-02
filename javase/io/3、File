@@ -1,0 +1,37 @@
+1、File是文件和路径名的抽象表现形式
+ 说人话：file可能对应的目录，也可能对应文件
+2、File和IP没有关系，不能完成文件的读写
+3、需要掌握常用方法：
+    static final String separator
+        属性：字符串分割符 \\
+    boolean exists();
+        判断file是否存在，true存在，false不存在
+    void createNewFile();
+        以文件的形式创建file
+    void mkdir();
+        以目录的形式创建，不能构建层级目录
+    void mkdirs();
+        以目录的形式创建，构建层级目录
+    String getParent();
+        获取父路径
+    File getParentFile();
+        获取父File
+    String getAbsolutePath();
+        获取绝对路径
+    String getName();
+        获取文件名
+    boolean isDirectory();
+        校验是否是个目录
+    boolean isFile();
+        是否是个文件
+    long lastModified();
+        获取最后一次修改时间，返回毫秒 从1970年到最后修改时间的毫秒值
+        毫秒转换为日期：new Date(long date);
+    long length();
+        获取文件大小，返回字节数
+    boolean renameTo(File dest);
+        重命名当前抽象路径名表示的文件
+    File[] listFiles()
+        获取当前目录下所有的子文件
+    boolean delete();
+        删除此抽象路径名表示的文件或目录。如果该路径名表示一个目录，则该目录在中必须为空

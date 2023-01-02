@@ -1,0 +1,14 @@
+gc()
+调用gc回收对象
+currentTimeMills()
+获取系统时间
+exit(0);
+关闭jvm
+static out
+获取System的属性 printStream标准输出流，不用关闭
+arraycopy(...)
+数组拷贝
+setOut(PrintStream out)
+修改标准输出流，可以修改输出方向
+String getProperties(String key)
+获取系统参数，例如 user.home 获取当前系统用户的根

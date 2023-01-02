@@ -1,0 +1,15 @@
+springCloud基于springboot
+1、运用spring官方的cloud进行搭建，到spring.io官网查看cloud的GA版(稳定版)查看对应的boot版本
+2、运用Alibaba官方的cloud进行搭建，到github官网查看对应的springCloud版本和boot版本
+
+springCloud涉及的组件
+ 服务的注册和发现：eureka、nacos、consul、zookeeper
+ 服务的负载均衡：ribbon、dubbo
+ 服务的相互调用：openFeign、dubbo
+ 服务的容错：hystrix、sentinel
+ 服务网关：gateway、zuul
+ 服务配置的统一管理:config-server、nacos
+ 服务消息总线:bus
+ 服务安全组件:security、Oauth2.0
+ 服务监控:admin、jvm
+ 链路追踪:sleuth+zipkin

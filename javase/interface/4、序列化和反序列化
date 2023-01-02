@@ -1,0 +1,27 @@
+1、序列化：将内存中的数据 分片、排好编号 通过网络传输给文件
+    拆分对象，将java对象存储到文件中。将java对象的状态保存下来的过程
+    Serialize
+2、反序列化：将文件 中 分片、排好编号 的数据 读到内存中
+    组装对象过程，将硬盘上的数据重新恢复到内存中，恢复成java对象
+    DeSerialize
+3、java.io.Serializable
+    标志性接口：没有任何代码，起到标识作用，jvm看到这个类实现该接口会对该类进行特殊对待：
+        jvm会提供一个序列化版本号
+    参与序列化和反序列化的对象必须实现该接口
+4、一个类实现了 java.io.Serializable ,但其中个别属性不希望序列化
+    在属性加关键字 transient 游离的
+    private transient String idNo;
+5、序列化版本号作用：
+    jvm采用什么机制区分类？
+        1、首先通过类名做比对，如果类名不一样肯定不是一个类
+        2、如果类名一样，靠序列化版本号区分
+    自动生成的序列化版本号缺陷：
+        一旦代码确定后，不能进行后续修改；因为只要修改，必然会重新编译，生成新的序列化版本号
+        同一个类重新编译前后的序列化版本号不一样
+        这样jvm就认为这是一个全新的类，曾经序列化的数据就不能反序列化了
+6、！！！凡是一个类实现了Serializable接口，建议给类提供一个固定的序列化版本号
+    这样jvm就认为这是同一个类，曾经序列化的数据也能反序列化了
+7、idea设置生成版本号
+    settings-->Inspections-->serializable class without 'serialVersionUID'
+    点对勾，点应用
+    在实现serializable接口的类名上 alt+回车，add 'serialVersionUID' field

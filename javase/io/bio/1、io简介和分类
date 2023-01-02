@@ -1,0 +1,110 @@
+1、IO流原理
+  I/O是Input/Output的缩写， I/O技术是非常实用的技术，用于处理设备之间的数据传输。如读/写文件，网络通讯等。
+  Java程序中，对于数据的输入/输出操作以”流(stream)” 的方式进行。
+  java.io包下提供了各种“流”类和接口，用以获取不同种类的数据，并通过标准的方法输入或输出数据。
+2、流的特性
+  先进先出：最先写入输出流的数据最先被输入流读取到。
+  顺序存取：可以一个接一个地往流中写入一串字节，读出时也将按写入顺序读取一串字节，不能随机访问中间的数据。（RandomAccessFile除外）
+  只读或只写：每个流只能是输入流或输出流的一种，不能同时具备两个功能，输入流只能进行读操作，对输出流只能进行写操作。在一个数据传输通道中，如果既要写入数据，又要读取数据，则要分别提供两个流。
+  断电内存消失
+3、IO流的分类：
+    按照流的方向进行分类：
+        输入流
+            以内存为参照物，往内存中去，叫做输入（input），或者叫做读（read）
+        输出流
+            往内存中出来，叫做输出（output），或者叫做写（write）
+    按照操作的数据单位进行分类：
+         有的流是按照字节的方式读取数据，一次读取1个字节byte,等同于一次读取8个二进制
+            这种流是万能的，什么类型的文件都可以读取。包括:文本文件，图片，声音文件
+                假设文件file.txt,采用字节流的话是这样读的:
+                    a中国bc张三fe
+                    第一次读: 一个字节，正好读到'a'
+                    第二次读:一个字节，正好读到'中'字符的一半。
+                    第三次读: 一个字节，正好读到'中'字符的另外一半。
+
+            有的流是按照字符的方式读取数据的，一次读取一一个字符，这种流是为了方便读取
+            普通文本(.txt)文件而存在的，这种流不能读取:图片、声音、视频等文件。只能读取纯
+            文本文件，连word文件都无法读取。
+                假设文件file1. txt,采用字符流的话是这样读的:
+                    a中国bc第一fe
+                    第一次读: 'a'字符 ('a'字符在windows系统中占用1个字节。)
+                    第二次读: '中'中字符('中'字符在windows系统中占用2个字节。)
+            总结：字节流可以处理一切文件，而字符流只能处理纯文本文件。
+    按照流的功能分类：节点流，处理流
+        节点流：直接操作数据读写的流类，比如FileInputStream
+        处理流：对一个已存在的流的链接和封装，通过对数据进行处理为程序提供功能强大、灵活的读写功能，
+              例如BufferedInputStream（缓冲字节流）
+        说人话：当一个流的构造方法中需要一个流时，这个被传进来的流叫节点流
+               外部负责包装的流叫做包装流、处理流
+
+        处理流和节点流应用了Java的装饰者设计模式。处理流是对节点流的封装，最终的数据处理还是由节点流完成的。
+        在诸多处理流中，有一个非常重要，那就是缓冲流。程序与磁盘的交互相对于内存运算是很慢的，容易成为程序的性能瓶颈。
+        减少程序与磁盘的交互，是提升程序效率一种有效手段。缓冲流，就应用这种思路：普通流每次读写一个字节，而缓冲流在内
+        存中设置一个缓存区，缓冲区先存储足够的待操作数据后，再与内存或磁盘进行交互。这样，在总数据量不变的情况下，通过
+        提高每次交互的数据量，减少了交互次数。
+4、四大家族的首领:
+    java.io.InputStream    字节输入流
+    java.io.OutputStream    字节输出流
+    java.io.Reader    字符输入流
+    java.io.Writer    字符输出流
+
+    四大家族的首领都是抽象类。(abstract class)
+    注意:在java中只要"类名"以stream结尾的都是字节流。以"Reader/Writer"结尾的都是字符流
+
+    所有的流都实现了:
+        java.io.closeable接口，都是可关闭的，都有close()方法。
+        流毕竟是一个管道，这个是内存和硬盘之间的通道，用完之后一定要关闭，在finally语句块中关闭(前提：确保流不是空)
+        不然会耗费(占用)很多资源。养成好习惯，用完流一定要关闭。
+
+    所有的输出流都实现了:
+        java.io.Flushable接口,都是可刷新的,都有flush()方法。
+        养成一个好习惯，输出流在最终输出之后，一定要记得flush()
+        刷新一下。这个刷新表示将通道/管道当中剩余未输出的数据
+        强行输出完(清空管道!)刷新的作用就是清空管道。
+        注意:如果没有flush()可能会导致丢失数据。
+5、必须掌握的基础流
+    文件专属:(重点)
+        java.io.FileInputStream（掌握）
+        java.io.FileOutputStream（掌握）
+        java.io.FileReader  （纯文本）
+        java.io.FileWriter  （纯文本）
+    转换流:(将字节流转换成字符流)
+        java.io.InputStreamReader
+        java.io.OutputStreamWriter
+    缓冲流专属:
+        java.io.BufferedReader
+        java.io.BufferedWriter
+        java.io.BufferedInputStream
+        java.io.BufferedOutputStream
+    数据流专属:(了解)
+        java.io.DataInputStream
+        java.io.DataOutputStream
+    标准输出流:
+        java.io.PrintWriter
+        java.io.PrintStream（掌握）
+    对象专属流:
+        java.io.ObjectInputStream（掌握）
+        java.io.ObjectOutputStream（掌握）
+6、 带有缓冲区的字符输入流，使用的时候不需要自定义char数组，或者说不需要自定义byte数组。自带缓冲
+    关闭处理流，只用关闭最外层流就行，里面的节点流会自动关闭（可看源码）
+    readLine方法读取一个文本行，不带换行符
+7、DataOutputStream 和 DataInputStream
+    数据专属流
+    DataOutputStream 数据字节输出流
+        这个流可以将数据连同数据类型一并写入文件
+        注意：这个文件不是普通的文本文档。用记事本打开乱码
+        writeByte(byte)...对八种基本数据类型支持写入
+        writeBytes(String s) 将字符串拆分成char数组，将char数组的每个字符转为byte类型依次次写入
+    DataInputStream 数据字节输入流
+        DataOutputStream生成的文件只能用这个流读取，并且读的时候需要提前知道写的顺序是什么
+        读的顺序需要和写的顺序一致才可以正常取出数据
+        byte b=readByte();...对八种基本数据类型支持读取
+        int read(byte[])对byte数组进行读取，byte数组长度应为写入的字符串的长度
+8、PrintStream
+    标准输出流，不需要手动close
+    改变输出方向，重新指定一个标准输出流即可
+        System.setOut(PrintStream out)
+9、ObjectInputStream 和 ObjectOutputStream
+    从文件反序列化对象到内存中 把内存中的对象序列化到文件中，对象必须实现java.io.Serialize接口
+    一个文件只能存一个序列化对象，因此存多个对象要把对象放到集合中
+

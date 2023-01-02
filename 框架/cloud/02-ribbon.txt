@@ -2,6 +2,7 @@
     Ribbon 源码核心： ILoadBalancer 接口：起到承上启下的作用
         1. 承上：从 eureka 拉取服务列表 2. 启下：使用 IRule 算法实现客户端调用的负载均衡
 2、cloud中ribbon通常和restTemplate或OpenFeign连用
+springBoot的组件中发送请求的有RestTemplate和WebClient(异步发送请求)
 3、RestTemplate:已集成ribbon，默认采用轮询方式
     restTemplate实现restful风格：get\post\put\delete
     //直接返回响应结果
@@ -14,10 +15,20 @@
     LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
     map.add(k,v);
     ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity("http://localhost:8761/eureka", map, String.class);
-4、post方式传参两种：json/表单
-        json传参核心：header content-type=application/json;charset=utf-8
-        form表单核心：header content-type=application/x-www-form-urlencoded
-    接json对象@RequestBody,接表单直接对象接
+4、post方式传参两种：application/json   表单
+      json传参核心：header content-type=application/json;charset=utf-8
+      接json对象@RequestBody
+     //使用restTemplate发送post，控制层用@RequetBody接收json参数，在发送请求时直接传对象即可，因为web里面默认使用jackson，会将对象转换为json
+     String s = restTemplate.postForObject(url, new User("zsf","111@qq.com"),String.class);
+
+     form表单核心：header content-type=application/x-www-form-urlencoded
+     接表单直接对象接
+     //使用restTemplate发送post表单，控制层用对象直接接收参数，在发送请求时使用LinkedMultiValueMap装参数
+     String url="http://localhost:8083/post2";
+     LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+     map.add("userName","zwj");
+     map.add("email","222@qq.com");
+     String s = restTemplate.postForObject(url, map,String.class);
 5、 ribbon主要功能：提供客户端负载均衡算法和服务调用
 6、负载均衡：Load Balance(LB)
     lb://   负载均衡协议：将负载（工作任务）进行平衡、分摊到多个操作单元上进行运行，从而协同完成工作任务，从而达到HA（高可用）
@@ -29,12 +40,17 @@ ribbon默认轮询算法的使用：
     1、RestTemplate的配置上开启ribbon的负载均衡功能，此时restTemplate已被ribbon托管，不能通过直接通过ip、port请求了；
         若要使用原生的RestTemplate必须new一个新的即可
         @LoadBalanced
-    2、先通过 "http://" + serviceId + "/info" 我们思考 ribbon 在真正调用之前需要做什么？
-        restTemplate.getForObject(“http://provider/info”, String.class); 想要把上面这个请求执行成功，我们需要以下几步
-         1. 拦截该请求； 2. 获取该请求的 URL 地址:http://provider/info 3. 截取 URL 地址中的 provider
-         4. 从服务列表中找到 key 为 provider 的服务实例的集合(服务发现) 5. 根据负载均衡算法选出一个符合的实例
-         6. 拿到该实例的 host 和 port，重构原来 URL 中的 provider
-         7. 真正的发送 restTemplate.getForObject(“http://ip:port/info”，String.class)
+        @Bean
+        public RestTemplate getRestTemplate(){
+            return new RestTemplate();
+        }
+    2、先通过 "http://" + 应用名称 + "/uri" 我们思考 ribbon 在真正调用之前需要做什么？
+        restTemplate.getForObject(“http://应用名称/uri”, String.class);
+        想要把上面这个请求执行成功，我们需要以下几步
+         1. 拦截该请求； 2. 获取该请求的 URL 地址:http://应用名称/uri 3. 截取 URL 地址中的 应用名称
+         4. 从服务列表中找到 key 为 应用名称 的服务实例的集合(服务发现) 5. 根据负载均衡算法选出一个符合的实例
+         6. 拿到该实例的 host 和 port，重构原来 URL 中的 应用名称
+         7. 真正的发送 restTemplate.getForObject(“http://ip:port/uri”，String.class)
     3、注意：启动微服务模块最好先启动服务提供者，在启动服务消费者；因消费者的restTemplate启动时创建，会到eureka拉去服务列表，此时服务提供者还没注册
         这时访问会报错，直到下次拉取服务列表时提供者已注册；或等一会在访问
     4、 轮询算法的理解：
@@ -42,13 +58,15 @@ ribbon默认轮询算法的使用：
         2、请求次数%实例数量
             被除数%除数  取模，取余好处时一个周期函数 结果总小于除数
         3、请求次数必然在全局有一个实例变量int i=...,随后进行++i/i++操作，但i++非线程安全
-            加锁，效率低；引入CAS和自旋锁，没有线程等待和唤醒的开销
-            cas 优点 性能好 java层面无锁状态 但在jvm层面有锁cmpxchg指令     缺点：若长时间没有拿到导致短暂时间内 CPU飙升 ，还有ABA问题
+            加锁，效率低；引入CAS和自旋锁，没有线程等待和唤醒的开销(在java层面)
+            cas compareAndSet
+                优点 性能好 java层面无锁状态 但在jvm层面有锁cmpxchg指令
+                缺点：若长时间没有拿到导致短暂时间内 CPU飙升 ，还有ABA问题
 在 ribbon 负载均衡算法有哪些？
     ribbon中有一个核心的负载均衡算法接口 IRule
         轮训、随机、权重、iphash
         轮训：区域内亲和轮训、响应时间最短轮训、并发最小轮训、过滤出符合条件的轮训
-        1.RoundRobinRule--轮询 请求次数 % 机器数量
+        1.RoundRobinRule--轮询 请求次[数 % 机器数量
         2.RandomRule--随机
         3.权重
         4. iphash
@@ -66,7 +84,7 @@ ribbon默认轮询算法的使用：
     场景1：访问不同的服务可以使用不同的负载均衡算法规则
         yml:
         #访问不同的服务使用不同的负载均衡算法
-        RIBBON-PROVIDER: # eureka中的ApplicationId
+        RIBBON-PROVIDER: # 写要调用服务的应用名称 spring.application.name
           ribbon:
             NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule # ribbon中负载均衡算法的全限定类名（IRule的实现类）
     场景2：全局改动负载均衡算法
@@ -83,7 +101,7 @@ ribbon默认轮询算法的使用：
             enabled: false # false:ribbon一启动不会主动去拉取服务列表，当实际使用时才去拉取,懒加载
         http:
             client:
-                enabled: false # 在 ribbon 最后要发起 Http 的调用，我们认为是 RestTemplate 完成的，其实最后是 HttpURLConnection 来完成的，
+                enabled: false # 在 ribbon 最后要发起 Http 的调用，我们认为是 RestTemplate 完成的，其实最后是 java.net.HttpURLConnection 来完成的，但不支持连接池
                 这里面设置为 true ， 可以把 HttpUrlConnection->HttpClient
             okhttp:
                 enabled: false #HttpUrlConnection 来完成的，这里面设置为 true ，可以 把 HttpUrlConnection->OkHttpClient(也是发 http 请求的，它在移动端的开发用的多)

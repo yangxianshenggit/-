@@ -1,0 +1,158 @@
+一、实现线程的四种方式
+    1、 编写一个类，直接继承java.lang.Thread，重写run方法；run方法中就是分支线程执行的代码
+        在需要创建分支线程的位置创建该类对象，调用start()启动分支线程。
+        import java.lang.Thread;
+        public MyThread extend Thread{
+            @Override
+            public void run(){}
+        }
+        MyThread thread=new MyThread();
+        thread.start();
+
+    2、 编写一个类，实现java.lang.runnable 接口，实现run方法。这个类并不是线程类，是一个可运行的类，还不是一个线程
+        在需要创建分支线程的位置创建该类对象，然后将可运行对象封装成线程对象，调用start()启动分支线程。
+        import java.lang.Thread;
+        import java.lang.Runnable;
+        public MyRunnable implements Runnable{
+            @Override
+            public void run(){}
+        }
+        Thread thread=new Thread(new MyRunnable());
+        thread.start();
+
+        匿名内部类：通过过一个没有名字的类new对象
+        import java.lang.Thread;
+        import java.lang.Runnable;
+        public static void main(String [] args){
+            Thread t=new Thread(new Runnable(){
+                    @Override
+                    public void run(){}
+                }
+             );
+             t.start();
+        }
+    3、 实现Callable接口
+        实现Runnable和实现Callable接口的方式基本相同，不过Callable接口中的call()方法有返回值，
+        Runnable接口中的run()方法无返回值
+    4、线程池的方式
+      线程池，其实就是一个容纳多个线程的容器，其中的线程可以重复使用，省去了频繁创建线程对象的操作，因为反复创建线程是非常消耗资源的
+      优点：实现自动化装配，易于管理，循环利用资源
+
+二、线程生命周期
+    新建状态 new Thread()
+        |
+        |   start()
+       \|/
+    就绪状态 就绪状态又叫可运行状态，表示分支线程具有强夺CPU时间片的权力(执行权)
+       /|\
+        |  抢夺到cpu时间片后，jvm调用run方法
+       \|/
+    运行状态 run方法的执行标志线程进入运行状态，当cpu时间片用完后，会重新回到就绪状态，
+            继续抢占cpu时间片，当再次抢到cpu时间片，会重新进入run方法接着上一次代码继续往下执行
+        |
+        |   run方法执结束
+       \|/
+     死亡状态
+
+    阻塞状态： 当一个线程运行中(运行状态)遇到阻塞事件，此时线程会进入阻塞状态，阻塞状态的线程会放弃之前占有的cpu时间片
+             当阻塞状态解除，会再次回到就绪状态，重新抢夺cpu时间片
+             阻塞方法：synchronized、join、sleep
+    锁池（lockPool，不属于生命周期状态）：当运行状态的线程碰到synchronized关键字会放弃cpu时间片，到锁池中找共享对象的对象锁，
+            没找到则在锁池中等待，如果找到了线程会进入就绪状态，继续抢占cpu时间片；
+三、如何合理的终止一个正在睡眠的线程,很常用
+    通过一个布尔值进行控制,不是一个栈控制同一个布尔属性
+    注意：以下代码分支线程中止必须是分支线程某次睡眠完后再次循环判断时才能终止
+    import java.lang.Thread;
+    import java.lang.Runnable;
+    public MyRunnable implements Runnable{
+        boolean run=true;
+        @Override
+        public void run(){
+            for(int i=0;i<10;i++){
+                if(run){
+                    System.out.println(i);
+                    Thread.sleep(1000*100)
+                }else{
+                    return;
+                }
+            }
+        }
+    }
+
+    Thread thread=new Thread(new MyRunnable());
+    thread.start();
+    ...
+    thread.run=false;
+四、线程调度
+    1、常见的线程调度模型
+        抢占式调度模型：哪个线程优先级较高，抢到的cpu时间片的时间就多一些；java就是用这种机制
+        均分式调度模型：每个线程占有的cpu时间片时间长一样，平均分配，众生平等
+    2、java中线程的优先级
+        1~10    默认5
+        int getPriority()
+        获取线程的优先级
+        void setPriority(int newPriority)
+        设置线程的优先级 1~10  默认5
+    3、static void yield()
+        线程让位，线程放弃抢占的cpu时间片，从运行状态回到就绪状态
+    4、void join()
+       线程合并，把调用该方法的线程合并到当前线程，当前线程进入阻塞，调用该方法的线程先执行，
+       当调用该方法的线程执行结束，当前线程才继续执行
+
+       不是栈合并，是栈之间协调等待。
+五、多线程并发环境下，数据的安全问题 ！！！！！！！
+    1、服务器已支持多线程，服务器已将线程的定义、线程对象的创建，线程的启动等，都已实现，这类代码不需要编写
+        重点是代码在这种环境下运行，数据的安全问题
+    2、数据的安全问题三条件：
+        多线程并发
+        有共享数据
+        共享数据有修改行为
+    3、怎么解决线程安全问题？
+        使用”线程同步机制“，实际上就是线程不能并发，必须排队执行
+        会牺牲一部分效率，数据安全第一位
+    4、线程同步涉及的术语：
+        异步编程模型：线程之间各自执行，谁也不需要等谁，多线程并发，效率较高
+        同步编程模型：多个线程执行，必须等待其他线程执行结束，线程之间发生了等待关系，效率较低
+    5、线程同步机制实现方式：
+        java语言中，任何一个对象都有一把锁，其实这把锁就是标记（只是把它叫做锁）
+        100个对象100把锁，一个对象一把锁。
+
+    6、synchronized关键字
+      假设两个线程并发，开始执行同步代码的时候肯定一个先一个后
+     假设t1先执行，遇到线程同步机制，这时候自动找共享对象的对象锁，并占有这把锁。
+     直到同步机制的代码执行结束，才会释放这把锁
+     假设t2线程此时也遇到了同步机制，也会占有这把锁，但t1已经占有这把锁，t2只能在同步机制外等待
+     t1执行完同步代码，t1归还锁后，t2占有这把锁，才能继续执行同步机制
+
+     同步的代码越少，效率越高
+     同步代码块：
+         synchronized(){
+             线程同步代码：必须线程排队执行，不能并发
+         }
+         小括号里这个数据必须是多线程共享的数据，才能达到多线程排队
+         换句话说：如果想让所有的线程访问synchronized的代码块都排队执行，小括号内直接常量即可（所有线程共享常量）
+         如果只是想让部分线程排队执行，写入部分线程共享对象即可
+     synchronized出现在实例方法上：
+        一定锁的this，不能是其他对象，这种方式不灵活。出现在实例方法上，表示整个方法体都会同步，
+        可能无故扩大同步范围，导致程序效率降低，故这种方式不常用
+        如果同步的代码是整个方法体，并且共享对象是this，那么就用这种方式
+     synchronized出现在静态方法上：
+        表示找类锁，类锁永远只有一把，就算创建100个对象，类锁也只有一把
+        作用：保证静态变量的安全
+
+    7、java中变量那些有数据安全问题 ！！！
+        实例变量：堆中
+        静态变量：方法区中
+        局部变量：在栈中
+        常量：方法区
+    以上变量：局部变量永远不会存在线程安全问题。
+    因为局部变量不共享。一个线程一个栈，局部变量存储在栈中
+    常量不可修改，永远不会存在线程安全问题。
+
+    实例变量在堆中，堆只有一个。静态变量在方法区中，方法区只有一个。
+    堆和方法区线程共享，所以可能存在线程安全问题
+    8、局部变量使用 StringBuffer 还是 StringBuilder ？
+        StringBuilder，局部变量没有线程安全问题；
+        因为StringBuffer所有方法都加 synchronized ，所有的方法调用都会到锁池中走一趟，效率低
+
+        同理：ArrayList是非线程安全的，Vector是线程安全的，HashMap和HashSet是非线程安全的，HashTable是线程安全的
