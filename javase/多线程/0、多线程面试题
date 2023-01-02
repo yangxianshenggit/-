@@ -1,0 +1,102 @@
+1、线程生命周期
+2、doOther执行时需要等doSome执行结束么？(提示：思考jvm内存图,看线程在运行的时候是否会去锁池找锁)
+！！！！！根据static 和synchronized加的位置不同结果不同
+public class Test1{
+    public static void main(String[]args){
+        MyClass mc=new MyClass();
+        MyThread2 t1=new MyThread2(mc);
+        t1.setName("t1");
+        MyThread2 t2=new MyThread2(mc);
+        t2.setName("t2");
+        t1.start();
+        try {
+            Thread.sleep(1000);//确保t1先执行
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        t2.start();
+    }
+}
+class MyThread2 extends Thread{
+    private MyClass mc;
+    public MyThread2(MyClass mc){
+        this.mc=mc;
+    }
+    @Override
+    public void run(){
+        if(this.getName().equals("t1")){
+            mc.doSome();
+        }else{
+            mc.doOther();
+        }
+    }
+}
+class MyClass{
+    public synchronized static void doSome(){
+        System.out.println("doSome begin");
+        try {
+            Thread.sleep(1000*10);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("doSome over");
+    }
+    public void doOther(){
+        System.out.println("doOther begin");
+        System.out.println("doOther over");
+    }
+
+}
+3、自行编写一段死锁代码
+public class DeadLockTest {
+    public static void main(String[] args) {
+        Object o1 = new Object();
+        Object o2 = new Object();
+        Thread t1 = new McLock1(o1,o2);
+        Thread t2 = new McLock2(o1,o2);
+        t1.start();
+        t2.start();
+    }
+}
+class McLock1 extends Thread{
+    Object o1;
+    Object o2;
+    public McLock1(Object o1,Object o2){
+        this.o1=o1;
+        this.o2=o2;
+    }
+    @Override
+    public void run() {
+        synchronized (o1){
+            try {
+                this.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            synchronized (o2){
+
+            }
+        }
+    }
+}
+class McLock2 extends Thread{
+    Object o1;
+    Object o2;
+    public McLock2(Object o1,Object o2){
+        this.o1=o1;
+        this.o2=o2;
+    }
+    @Override
+    public void run() {
+        synchronized (o2){
+            try {
+                this.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            synchronized (o1){
+
+            }
+        }
+    }
+}

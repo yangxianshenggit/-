@@ -1,0 +1,17 @@
+1、实现线程的方式：实现Callable接口
+    优点：可以获取线程的执行结果
+    缺点：在获取分支线程执行结果时，当前线程受阻塞，效率较低。
+        因为当前线程想要向下执行必须等待futureTask.get()返回结果，而get方法是为了拿分支线程的执行结果，分支线程执行需要时间
+    例子：
+        创建一个“未来任务类”对象 juc包下(java并发包)
+        FutureTask task=new FutureTask(new Callable<V>(){
+            public V call(){
+                ...
+                return V;
+            }
+        });
+
+        Thread t=new Thread(task);
+        t.start();
+        ...
+        Object o=task.get();
